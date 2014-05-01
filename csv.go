@@ -77,7 +77,7 @@ func MarshalBytes(in interface{}) (out []byte, err error) {
 }
 
 func Marshal(in interface{}, out io.Writer) (err error) {
-	return newEncoder(out).writeTo(getInterfaceType(in))
+	return newEncoder(out).writeTo(in)
 }
 
 // --------------------------------------------------------------------------
@@ -96,6 +96,6 @@ func UnmarshalBytes(in []byte, out interface{}) (err error) {
 }
 
 func Unmarshal(in io.Reader, out interface{}) (err error) {
-	return newDecoder(in).readTo(getInterfaceType(out))
+	return newDecoder(in).readTo(out)
 }
 
