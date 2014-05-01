@@ -33,10 +33,10 @@ import (
 )
 
 type Client struct { // Our example struct, you can use "-" to ignore a field
-	Id      string `csv:id`
-	Name    string `csv:name`
-	Age     string `csv:age`
-	NotUsed string `csv:-`
+	Id      string `csv:"id"`
+	Name    string `csv:"name"`
+	Age     string `csv:"age"`
+	NotUsed string `csv:"-"`
 }
 
 func main() {
