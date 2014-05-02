@@ -36,7 +36,7 @@ func (self *encoder) writeTo(in interface{}) error {
 			csvHeadersLabels[j] = ""
 			inInnerFieldValue, err := self.getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.Num) // Get the correct field header <-> position
 			if err != nil {
-				return nil
+				return err
 			}
 			csvHeadersLabels[j] = inInnerFieldValue
 		}
