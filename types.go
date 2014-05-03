@@ -14,7 +14,7 @@ type TypeMarshaller interface {
 	MarshalCSV() (string, error)
 }
 
-// TypeMarshaller is used to convert the CSV string into it interface representation.
+// TypeUnmarshaller is used to convert the CSV string into it interface representation.
 type TypeUnmarshaller interface {
 	UnmarshalCSV(string) error
 }
