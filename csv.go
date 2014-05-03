@@ -38,7 +38,7 @@ func getCSVWriter(out io.Writer) *csv.Writer {
 
 var selfCSVReader = DefaultCSVReader
 
-// DefaultCSVWriter is the default CSV writer used to parse CSV (cf. csv.NewReader)
+// DefaultCSVReader is the default CSV reader used to parse CSV (cf. csv.NewReader)
 func DefaultCSVReader(in io.Reader) *csv.Reader {
 	return csv.NewReader(in)
 }
@@ -63,12 +63,12 @@ func getCSVReader(in io.Reader) *csv.Reader {
 // --------------------------------------------------------------------------
 // Marshal functions
 
-// MarshalFile saves the in interface as CSV in the file.
+// MarshalFile saves the interface as CSV in the file.
 func MarshalFile(in interface{}, file *os.File) (err error) {
 	return Marshal(in, file)
 }
 
-// MarshalString returns the CSV string from in interface.
+// MarshalString returns the CSV string from the interface.
 func MarshalString(in interface{}) (out string, err error) {
 	bufferString := bytes.NewBufferString(out)
 	if err := Marshal(in, bufferString); err != nil {
@@ -77,7 +77,7 @@ func MarshalString(in interface{}) (out string, err error) {
 	return bufferString.String(), nil
 }
 
-// MarshalBytes returns the CSV bytes from in interface.
+// MarshalBytes returns the CSV bytes from the interface.
 func MarshalBytes(in interface{}) (out []byte, err error) {
 	bufferString := bytes.NewBuffer(out)
 	if err := Marshal(in, bufferString); err != nil {
@@ -86,7 +86,7 @@ func MarshalBytes(in interface{}) (out []byte, err error) {
 	return bufferString.Bytes(), nil
 }
 
-// Marshal returns the CSV in writer from in interface
+// Marshal returns the CSV in writer from the interface.
 func Marshal(in interface{}, out io.Writer) (err error) {
 	return newEncoder(out).writeTo(in)
 }
@@ -94,22 +94,22 @@ func Marshal(in interface{}, out io.Writer) (err error) {
 // --------------------------------------------------------------------------
 // Unmarshal functions
 
-// UnmarshalFile parses the CSV from the file in the out interface.
+// UnmarshalFile parses the CSV from the file in the interface.
 func UnmarshalFile(in *os.File, out interface{}) (err error) {
 	return Unmarshal(in, out)
 }
 
-// UnmarshalString parses the CSV from the string in the out interface.
+// UnmarshalString parses the CSV from the string in the interface.
 func UnmarshalString(in string, out interface{}) (err error) {
 	return Unmarshal(strings.NewReader(in), out)
 }
 
-// UnmarshalBytes parses the CSV from the bytes in the out interface.
+// UnmarshalBytes parses the CSV from the bytes in the interface.
 func UnmarshalBytes(in []byte, out interface{}) (err error) {
 	return Unmarshal(bytes.NewReader(in), out)
 }
 
-// Unmarshal parses the CSV from the reader in the out interface.
+// Unmarshal parses the CSV from the reader in the interface.
 func Unmarshal(in io.Reader, out interface{}) (err error) {
 	return newDecoder(in).readTo(out)
 }

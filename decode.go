@@ -102,17 +102,15 @@ func (my *decoder) getCSVFieldPosition(key string, structInfo *structInfo) *fiel
 func (my *decoder) createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) reflect.Value {
 	if outInnerWasPointer {
 		return reflect.New(outInnerType)
-	} else {
-		return reflect.New(outInnerType).Elem()
 	}
+	return reflect.New(outInnerType).Elem()
 }
 
 func (my *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer bool, fieldPosition int, value string) error {
 	if outInnerWasPointer {
 		return setField(outInner.Elem().Field(fieldPosition), value)
-	} else {
-		return setField(outInner.Field(fieldPosition), value)
 	}
+	return setField(outInner.Field(fieldPosition), value)
 }
 
 func (my *decoder) getCSVRows() ([][]string, error) {

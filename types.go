@@ -9,12 +9,12 @@ import (
 // --------------------------------------------------------------------------
 // Conversion interfaces
 
-// TypeMarshaller is used to convert the inner type in string
+// TypeMarshaller is used to convert the interface into it string representation.
 type TypeMarshaller interface {
 	MarshalCSV() (string, error)
 }
 
-// TypeMarshaller is used to convert the string in inner type
+// TypeMarshaller is used to convert the CSV string into it interface representation.
 type TypeUnmarshaller interface {
 	UnmarshalCSV(string) error
 }
