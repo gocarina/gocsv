@@ -1,9 +1,11 @@
 Go CSV
 =====
 
-The GoCSV package aims to provide easy serialization and unserialization functions to use CSV in Go from ```os.File, string or []byte```
+The GoCSV package aims to provide easy serialization and deserialization functions to use CSV in Golang
 
 API and techniques inspired from http://labix.org/mgo
+
+[![GoDoc](https://godoc.org/github.com/JonathanPicques/gocsv?status.png)](https://godoc.org/github.com/JonathanPicques/gocsv)
 
 Full example
 =====
