@@ -9,15 +9,29 @@ import (
 // --------------------------------------------------------------------------
 // Conversion interfaces
 
+// TypeMarshaller is implemented by any value that has a MarshalCSV method
+// which defines the ``native'' format for that value.
+// This converter is used to convert the value to it string representation
 type TypeMarshaller interface {
 	MarshalCSV() (string, error)
 }
 
+// Stringer is implemented by any value that has a String method
+// which defines the ``native'' format for that value.
+// This converter will be used if your value does not implement TypeMarshaller
+type Stringer interface {
+	String() string
+}
+
+// TypeUnmarshaller is implemented by any value that has an UnmarshalCSV method
+// which defines the ``native'' format for that value.
+// This converter is used to convert a string to your value representation of that string
 type TypeUnmarshaller interface {
 	UnmarshalCSV(string) error
 }
 
 var (
+	stringerType   = reflect.TypeOf((*Stringer)(nil)).Elem()
 	marshallerType   = reflect.TypeOf((*TypeMarshaller)(nil)).Elem()
 	unMarshallerType = reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem()
 )
@@ -233,7 +247,7 @@ func unmarshall(field reflect.Value, value string) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeUnmarshaller")
+		return fmt.Errorf("No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller")
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
 		if dupField.IsNil() {
@@ -247,16 +261,18 @@ func unmarshall(field reflect.Value, value string) error {
 	if dupField.CanAddr() {
 		return unMarshallIt(dupField.Addr())
 	}
-	return fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeUnmarshaller")
+	return fmt.Errorf("No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller")
 }
 
 func marshall(field reflect.Value) (value string, err error) {
 	dupField := field
-	marshallIt := func(finalField reflect.Value) (value string, err error) {
-		if finalField.CanInterface() && finalField.Type().Implements(marshallerType) {
+	marshallIt := func(finalField reflect.Value) (string, error) {
+		if finalField.CanInterface() && finalField.Type().Implements(marshallerType) { // Use TypeMarshaller when possible
 			return finalField.Interface().(TypeMarshaller).MarshalCSV()
+		} else if finalField.CanInterface() && finalField.Type().Implements(stringerType) { // Otherwise try to use Stringer
+			return finalField.Interface().(Stringer).String(), nil
 		}
-		return value, fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeUnmarshaller")
+		return value, fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeMarshaller nor Stringer")
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
 		if dupField.IsNil() {
@@ -267,5 +283,5 @@ func marshall(field reflect.Value) (value string, err error) {
 	if dupField.CanAddr() {
 		return marshallIt(dupField.Addr())
 	}
-	return value, fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeUnmarshaller")
+	return value, fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeMarshaller nor Stringer")
 }
