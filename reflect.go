@@ -60,9 +60,6 @@ func getStructInfo(rType reflect.Type) *structInfo {
 	return stInfo
 }
 
-// --------------------------------------------------------------------------
-// Reflection helpers
-
 func getConcreteContainerInnerType(in reflect.Type) (inInnerWasPointer bool, inInnerType reflect.Type) {
 	inInnerType = in.Elem()
 	inInnerWasPointer = false

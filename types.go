@@ -10,28 +10,26 @@ import (
 // Conversion interfaces
 
 // TypeMarshaller is implemented by any value that has a MarshalCSV method
-// which defines the ``native'' format for that value.
 // This converter is used to convert the value to it string representation
 type TypeMarshaller interface {
 	MarshalCSV() (string, error)
 }
 
 // Stringer is implemented by any value that has a String method
-// which defines the ``native'' format for that value.
+// This converter is used to convert the value to it string representation
 // This converter will be used if your value does not implement TypeMarshaller
 type Stringer interface {
 	String() string
 }
 
 // TypeUnmarshaller is implemented by any value that has an UnmarshalCSV method
-// which defines the ``native'' format for that value.
 // This converter is used to convert a string to your value representation of that string
 type TypeUnmarshaller interface {
 	UnmarshalCSV(string) error
 }
 
 var (
-	stringerType   = reflect.TypeOf((*Stringer)(nil)).Elem()
+	stringerType     = reflect.TypeOf((*Stringer)(nil)).Elem()
 	marshallerType   = reflect.TypeOf((*TypeMarshaller)(nil)).Elem()
 	unMarshallerType = reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem()
 )
@@ -49,9 +47,8 @@ func toString(in interface{}) (string, error) {
 		b := inValue.Bool()
 		if b {
 			return "true", nil
-		} else {
-			return "false", nil
 		}
+		return "false", nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return string(inValue.Int()), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -79,23 +76,20 @@ func toBool(in interface{}) (bool, error) {
 		i := inValue.Int()
 		if i != 0 {
 			return true, nil
-		} else {
-			return false, nil
 		}
+		return false, nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		i := inValue.Uint()
 		if i != 0 {
 			return true, nil
-		} else {
-			return false, nil
 		}
+		return false, nil
 	case reflect.Float32, reflect.Float64:
 		f := inValue.Float()
 		if f != 0 {
 			return true, nil
-		} else {
-			return false, nil
 		}
+		return false, nil
 	}
 	return false, fmt.Errorf("No known conversion from " + inValue.Type().String() + " to bool")
 }
@@ -109,9 +103,8 @@ func toInt(in interface{}) (int64, error) {
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
-		} else {
-			return 0, nil
 		}
+		return 0, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return inValue.Int(), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -131,9 +124,8 @@ func toUint(in interface{}) (uint64, error) {
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
-		} else {
-			return 0, nil
 		}
+		return 0, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return uint64(inValue.Int()), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -153,9 +145,8 @@ func toFloat(in interface{}) (float64, error) {
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
-		} else {
-			return 0, nil
 		}
+		return 0, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return float64(inValue.Int()), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:

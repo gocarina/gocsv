@@ -14,20 +14,20 @@ func newDecoder(in io.Reader) *decoder {
 	return &decoder{in}
 }
 
-func (my *decoder) readTo(out interface{}) error {
+func (decode *decoder) readTo(out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := my.ensureOutType(outType); err != nil {
+	if err := decode.ensureOutType(outType); err != nil {
 		return err
 	}
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
-	if err := my.ensureOutInnerType(outInnerType); err != nil {
+	if err := decode.ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	csvRows, err := my.getCSVRows() // Get the CSV csvRows
+	csvRows, err := decode.getCSVRows() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
-	if err := my.ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
+	if err := decode.ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType)                            // Get the inner struct info to get CSV annotations
@@ -35,15 +35,15 @@ func (my *decoder) readTo(out interface{}) error {
 	for i, csvRow := range csvRows {                                             // Iterate over csv rows
 		if i == 0 { // First line of CSV is the header line
 			for j, csvColumnHeader := range csvRow {
-				if fieldInfo := my.getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
+				if fieldInfo := decode.getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
 					csvHeadersLabels[j] = fieldInfo
 				}
 			}
 		} else {
-			outInner := my.createNewOutInner(outInnerWasPointer, outInnerType)
+			outInner := decode.createNewOutInner(outInnerWasPointer, outInnerType)
 			for j, csvColumnContent := range csvRow {
 				if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-					if err := my.setInnerField(&outInner, outInnerWasPointer, fieldInfo.Num, csvColumnContent); err != nil { // Set field of struct
+					if err := decode.setInnerField(&outInner, outInnerWasPointer, fieldInfo.Num, csvColumnContent); err != nil { // Set field of struct
 						return err
 					}
 				}
@@ -55,7 +55,7 @@ func (my *decoder) readTo(out interface{}) error {
 }
 
 // Check if the outType is an array or a slice
-func (my *decoder) ensureOutType(outType reflect.Type) error {
+func (decode *decoder) ensureOutType(outType reflect.Type) error {
 	switch outType.Kind() {
 	case reflect.Slice:
 		fallthrough
@@ -66,7 +66,7 @@ func (my *decoder) ensureOutType(outType reflect.Type) error {
 }
 
 // Check if the outInnerType is of type struct
-func (my *decoder) ensureOutInnerType(outInnerType reflect.Type) error {
+func (decode *decoder) ensureOutInnerType(outInnerType reflect.Type) error {
 	switch outInnerType.Kind() {
 	case reflect.Struct:
 		return nil
@@ -74,7 +74,7 @@ func (my *decoder) ensureOutInnerType(outInnerType reflect.Type) error {
 	return fmt.Errorf("cannot use " + outInnerType.String() + ", only struct supported")
 }
 
-func (my *decoder) ensureOutCapacity(out *reflect.Value, csvLen int) error {
+func (decode *decoder) ensureOutCapacity(out *reflect.Value, csvLen int) error {
 	switch out.Kind() {
 	case reflect.Array:
 		if out.Len() < csvLen-1 { // Array is not big enough to hold the CSV content (arrays are not addressable)
@@ -90,7 +90,7 @@ func (my *decoder) ensureOutCapacity(out *reflect.Value, csvLen int) error {
 	return nil
 }
 
-func (my *decoder) getCSVFieldPosition(key string, structInfo *structInfo) *fieldInfo {
+func (decode *decoder) getCSVFieldPosition(key string, structInfo *structInfo) *fieldInfo {
 	for _, field := range structInfo.Fields {
 		if field.Key == key {
 			return &field
@@ -99,20 +99,20 @@ func (my *decoder) getCSVFieldPosition(key string, structInfo *structInfo) *fiel
 	return nil
 }
 
-func (my *decoder) createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) reflect.Value {
+func (decode *decoder) createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) reflect.Value {
 	if outInnerWasPointer {
 		return reflect.New(outInnerType)
 	}
 	return reflect.New(outInnerType).Elem()
 }
 
-func (my *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer bool, fieldPosition int, value string) error {
+func (decode *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer bool, fieldPosition int, value string) error {
 	if outInnerWasPointer {
 		return setField(outInner.Elem().Field(fieldPosition), value)
 	}
 	return setField(outInner.Field(fieldPosition), value)
 }
 
-func (my *decoder) getCSVRows() ([][]string, error) {
-	return getCSVReader(my.in).ReadAll()
+func (decode *decoder) getCSVRows() ([][]string, error) {
+	return getCSVReader(decode.in).ReadAll()
 }

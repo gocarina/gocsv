@@ -15,7 +15,7 @@ import (
 )
 
 // --------------------------------------------------------------------------
-// CSVReader used to format CSV
+// CSVWriter used to format CSV
 
 var selfCSVWriter = DefaultCSVWriter
 

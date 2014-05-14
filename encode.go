@@ -14,16 +14,16 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func (my *encoder) writeTo(in interface{}) error {
+func (encode *encoder) writeTo(in interface{}) error {
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := my.ensureInType(inType); err != nil {
+	if err := encode.ensureInType(inType); err != nil {
 		return err
 	}
 	inInnerWasPointer, inInnerType := getConcreteContainerInnerType(inType) // Get the concrete inner type (not pointer) (Container<"?">)
-	if err := my.ensureInInnerType(inInnerType); err != nil {
+	if err := encode.ensureInInnerType(inInnerType); err != nil {
 		return err
 	}
-	csvWriter := getCSVWriter(my.out)               // Get the CSV writer
+	csvWriter := getCSVWriter(encode.out)               // Get the CSV writer
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
@@ -34,7 +34,7 @@ func (my *encoder) writeTo(in interface{}) error {
 	for i := 0; i < inLen; i++ { // Iterate over container rows
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
-			inInnerFieldValue, err := my.getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.Num) // Get the correct field header <-> position
+			inInnerFieldValue, err := encode.getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.Num) // Get the correct field header <-> position
 			if err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ func (my *encoder) writeTo(in interface{}) error {
 }
 
 // Check if the inType is an array or a slice
-func (my *encoder) ensureInType(outType reflect.Type) error {
+func (encode *encoder) ensureInType(outType reflect.Type) error {
 	switch outType.Kind() {
 	case reflect.Slice:
 		fallthrough
@@ -58,7 +58,7 @@ func (my *encoder) ensureInType(outType reflect.Type) error {
 }
 
 // Check if the inInnerType is of type struct
-func (my *encoder) ensureInInnerType(outInnerType reflect.Type) error {
+func (encode *encoder) ensureInInnerType(outInnerType reflect.Type) error {
 	switch outInnerType.Kind() {
 	case reflect.Struct:
 		return nil
@@ -66,7 +66,7 @@ func (my *encoder) ensureInInnerType(outInnerType reflect.Type) error {
 	return fmt.Errorf("cannot use " + outInnerType.String() + ", only struct supported")
 }
 
-func (my *encoder) getInnerField(outInner reflect.Value, outInnerWasPointer bool, fieldPosition int) (string, error) {
+func (encode *encoder) getInnerField(outInner reflect.Value, outInnerWasPointer bool, fieldPosition int) (string, error) {
 	if outInnerWasPointer {
 		return getFieldAsString(outInner.Elem().Field(fieldPosition))
 	}
