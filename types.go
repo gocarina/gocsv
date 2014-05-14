@@ -234,9 +234,8 @@ func unmarshall(field reflect.Value, value string) error {
 		if finalField.CanInterface() && finalField.Type().Implements(unMarshallerType) {
 			if err := finalField.Interface().(TypeUnmarshaller).UnmarshalCSV(value); err != nil {
 				return err
-			} else {
-				return nil
 			}
+			return nil
 		}
 		return fmt.Errorf("No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller")
 	}
