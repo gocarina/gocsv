@@ -1,9 +1,11 @@
 Go CSV
 =====
 
-The GoCSV package aims to provide easy serialization and unserialization functions to use CSV in Go from ```os.File, string or []byte```
+The GoCSV package aims to provide easy serialization and deserialization functions to use CSV in Golang
 
 API and techniques inspired from http://labix.org/mgo
+
+[![GoDoc](https://godoc.org/github.com/JonathanPicques/gocsv?status.png)](https://godoc.org/github.com/JonathanPicques/gocsv)
 
 Full example
 =====
@@ -70,6 +72,37 @@ func main() {
 	}
 	fmt.Println(csvContent) // Display all clients as CSV string
 
+}
+
+```
+
+Customizable Converters
+---
+
+```go
+
+type DateTime struct {
+	time.Time
+}
+
+// Convert the internal date as CSV string
+func (date *DateTime) MarshalCSV() (string, error) {
+	return date.Time.Format("20060201"), nil
+}
+
+// Convert the CSV string as internal date
+func (date *DateTime) UnmarshalCSV(csv string) (err error) {
+	date.Time, err = time.Parse("20060201", csv)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type Client struct { // Our example struct with a custom type (DateTime)
+	Id       string   `csv:"id"`
+	Name     string   `csv:"name"`
+	Employed DateTime `csv:"employed"`
 }
 
 ```
