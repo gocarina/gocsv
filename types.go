@@ -1,6 +1,7 @@
 package gocsv
 
 import (
+	"encoding"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -29,9 +30,11 @@ type TypeUnmarshaller interface {
 }
 
 var (
-	stringerType     = reflect.TypeOf((*Stringer)(nil)).Elem()
-	marshallerType   = reflect.TypeOf((*TypeMarshaller)(nil)).Elem()
-	unMarshallerType = reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem()
+	stringerType        = reflect.TypeOf((*Stringer)(nil)).Elem()
+	marshallerType      = reflect.TypeOf((*TypeMarshaller)(nil)).Elem()
+	unMarshallerType    = reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem()
+	textMarshalerType   = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
+	textUnMarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 )
 
 // --------------------------------------------------------------------------
@@ -50,9 +53,9 @@ func toString(in interface{}) (string, error) {
 		}
 		return "false", nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return string(inValue.Int()), nil
+		return fmt.Sprintf("%v", inValue.Int()), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return string(inValue.Uint()), nil
+		return fmt.Sprintf("%v", inValue.Uint()), nil
 	case reflect.Float32, reflect.Float64:
 		return strconv.FormatFloat(inValue.Float(), byte('f'), 64, 64), nil
 	}
@@ -236,6 +239,10 @@ func unmarshall(field reflect.Value, value string) error {
 				return err
 			}
 			return nil
+		} else if finalField.CanInterface() && finalField.Type().Implements(textUnMarshalerType) { // Otherwise try to use TextMarshaller
+			if err := finalField.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(value)); err != nil {
+				return err
+			}
 		}
 		return fmt.Errorf("No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller")
 	}
@@ -261,7 +268,11 @@ func marshall(field reflect.Value) (value string, err error) {
 			return finalField.Interface().(TypeMarshaller).MarshalCSV()
 		} else if finalField.CanInterface() && finalField.Type().Implements(stringerType) { // Otherwise try to use Stringer
 			return finalField.Interface().(Stringer).String(), nil
+		} else if finalField.CanInterface() && finalField.Type().Implements(textMarshalerType) { // Otherwise try to use TextMarshaller
+			text, err := finalField.Interface().(encoding.TextMarshaler).MarshalText()
+			return string(text), err
 		}
+
 		return value, fmt.Errorf("No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implements TypeMarshaller nor Stringer")
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
