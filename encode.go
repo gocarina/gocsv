@@ -23,7 +23,7 @@ func (encode *encoder) writeTo(in interface{}) error {
 	if err := encode.ensureInInnerType(inInnerType); err != nil {
 		return err
 	}
-	csvWriter := getCSVWriter(encode.out)               // Get the CSV writer
+	csvWriter := getCSVWriter(encode.out)           // Get the CSV writer
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
@@ -43,7 +43,7 @@ func (encode *encoder) writeTo(in interface{}) error {
 		csvWriter.Write(csvHeadersLabels)
 	}
 	csvWriter.Flush()
-	return nil
+	return csvWriter.Error()
 }
 
 // Check if the inType is an array or a slice
