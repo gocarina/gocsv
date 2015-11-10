@@ -40,6 +40,9 @@ func (decode *decoder) readTo(out interface{}) error {
 				}
 			}
 		} else {
+			if len(outInnerStructInfo.Fields) != len(csvHeadersLabels) {
+				return fmt.Errorf("not all struct tags were matched to a csv header")
+			}
 			outInner := decode.createNewOutInner(outInnerWasPointer, outInnerType)
 			for j, csvColumnContent := range csvRow {
 				if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
