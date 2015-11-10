@@ -7,11 +7,12 @@ import (
 )
 
 type encoder struct {
-	out io.Writer
+	out       io.Writer
+	delimiter rune
 }
 
-func newEncoder(out io.Writer) *encoder {
-	return &encoder{out}
+func newEncoder(out io.Writer, delim rune) *encoder {
+	return &encoder{out, delim}
 }
 
 func (encode *encoder) writeTo(in interface{}) error {
