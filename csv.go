@@ -64,52 +64,53 @@ func getCSVReader(in io.Reader) *csv.Reader {
 // Marshal functions
 
 // MarshalFile saves the interface as CSV in the file.
-func MarshalFile(in interface{}, file *os.File, delim rune) (err error) {
-	return Marshal(in, delim, file)
+func MarshalFile(in interface{}, file *os.File) (err error) {
+	return Marshal(in, file)
 }
 
 // MarshalString returns the CSV string from the interface.
-func MarshalString(in interface{}, delim rune) (out string, err error) {
+func MarshalString(in interface{}) (out string, err error) {
 	bufferString := bytes.NewBufferString(out)
-	if err := Marshal(in, delim, bufferString); err != nil {
+	if err := Marshal(in, bufferString); err != nil {
 		return "", err
 	}
 	return bufferString.String(), nil
 }
 
 // MarshalBytes returns the CSV bytes from the interface.
-func MarshalBytes(in interface{}, delim rune) (out []byte, err error) {
+func MarshalBytes(in interface{}) (out []byte, err error) {
 	bufferString := bytes.NewBuffer(out)
-	if err := Marshal(in, delim, bufferString); err != nil {
+	if err := Marshal(in, bufferString); err != nil {
 		return nil, err
 	}
 	return bufferString.Bytes(), nil
 }
 
 // Marshal returns the CSV in writer from the interface.
-func Marshal(in interface{}, delim rune, out io.Writer) (err error) {
-	return newEncoder(out, delim).writeTo(in)
+func Marshal(in interface{}, out io.Writer) (err error) {
+	return newEncoder(out).writeTo(in)
 }
 
 // --------------------------------------------------------------------------
 // Unmarshal functions
 
 // UnmarshalFile parses the CSV from the file in the interface.
-func UnmarshalFile(in *os.File, delim rune, out interface{}) (err error) {
-	return Unmarshal(in, delim, out)
+func UnmarshalFile(in *os.File, out interface{}) (err error) {
+	return Unmarshal(in, out)
 }
 
 // UnmarshalString parses the CSV from the string in the interface.
-func UnmarshalString(in string, delim rune, out interface{}) (err error) {
-	return Unmarshal(strings.NewReader(in), delim, out)
+func UnmarshalString(in string, out interface{}) (err error) {
+	return Unmarshal(strings.NewReader(in), out)
 }
 
 // UnmarshalBytes parses the CSV from the bytes in the interface.
-func UnmarshalBytes(in []byte, delim rune, out interface{}) (err error) {
-	return Unmarshal(bytes.NewReader(in), delim, out)
+func UnmarshalBytes(in []byte, out interface{}) (err error) {
+	return Unmarshal(bytes.NewReader(in), out)
 }
 
 // Unmarshal parses the CSV from the reader in the interface.
-func Unmarshal(in io.Reader, delim rune, out interface{}) (err error) {
-	return newDecoder(in, delim).readTo(out)
+func Unmarshal(in io.Reader, out interface{}) (err error) {
+	return newDecoder(in).readTo(out)
 }
+

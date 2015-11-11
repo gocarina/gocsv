@@ -7,12 +7,11 @@ import (
 )
 
 type decoder struct {
-	in        io.Reader
-	delimiter rune
+	in io.Reader
 }
 
-func newDecoder(in io.Reader, delim rune) *decoder {
-	return &decoder{in, delim}
+func newDecoder(in io.Reader) *decoder {
+	return &decoder{in}
 }
 
 func (decode *decoder) readTo(out interface{}) error {
@@ -118,7 +117,5 @@ func (decode *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer
 }
 
 func (decode *decoder) getCSVRows() ([][]string, error) {
-	r := getCSVReader(decode.in)
-	r.Comma = decode.delimiter
-	return r.ReadAll()
+	return getCSVReader(decode.in).ReadAll()
 }
