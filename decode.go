@@ -14,6 +14,10 @@ func newDecoder(in io.Reader) *decoder {
 	return &decoder{in}
 }
 
+func (decode *decoder) getCSVRows() ([][]string, error) {
+	return getCSVReader(decode.in).ReadAll()
+}
+
 func (decode *decoder) readTo(out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
@@ -114,8 +118,4 @@ func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, fieldPositi
 		return setField(outInner.Elem().Field(fieldPosition), value)
 	}
 	return setField(outInner.Field(fieldPosition), value)
-}
-
-func (decode *decoder) getCSVRows() ([][]string, error) {
-	return getCSVReader(decode.in).ReadAll()
 }
