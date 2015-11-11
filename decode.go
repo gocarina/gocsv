@@ -2,6 +2,7 @@ package gocsv
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -47,7 +48,11 @@ func readTo(decoder Decoder, out interface{}) error {
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
-	outInnerStructInfo := getStructInfo(outInnerType)                            // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if len(outInnerStructInfo.Fields) == 0 {
+		return errors.New("no csv struct tags found")
+	}
+
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
 	for i, csvRow := range csvRows {                                             // Iterate over csv rows
 		if i == 0 { // First line of CSV is the header line
