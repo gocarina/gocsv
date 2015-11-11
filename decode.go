@@ -16,18 +16,18 @@ func newDecoder(in io.Reader) *decoder {
 
 func (decode *decoder) readTo(out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := decode.ensureOutType(outType); err != nil {
+	if err := ensureOutType(outType); err != nil {
 		return err
 	}
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
-	if err := decode.ensureOutInnerType(outInnerType); err != nil {
+	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
 	csvRows, err := decode.getCSVRows() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
-	if err := decode.ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
+	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType)                            // Get the inner struct info to get CSV annotations
@@ -35,15 +35,15 @@ func (decode *decoder) readTo(out interface{}) error {
 	for i, csvRow := range csvRows {                                             // Iterate over csv rows
 		if i == 0 { // First line of CSV is the header line
 			for j, csvColumnHeader := range csvRow {
-				if fieldInfo := decode.getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
+				if fieldInfo := getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
 					csvHeadersLabels[j] = fieldInfo
 				}
 			}
 		} else {
-			outInner := decode.createNewOutInner(outInnerWasPointer, outInnerType)
+			outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 			for j, csvColumnContent := range csvRow {
 				if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-					if err := decode.setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
+					if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
 						return err
 					}
 				}
@@ -55,7 +55,7 @@ func (decode *decoder) readTo(out interface{}) error {
 }
 
 // Check if the outType is an array or a slice
-func (decode *decoder) ensureOutType(outType reflect.Type) error {
+func ensureOutType(outType reflect.Type) error {
 	switch outType.Kind() {
 	case reflect.Slice:
 		fallthrough
@@ -66,7 +66,7 @@ func (decode *decoder) ensureOutType(outType reflect.Type) error {
 }
 
 // Check if the outInnerType is of type struct
-func (decode *decoder) ensureOutInnerType(outInnerType reflect.Type) error {
+func ensureOutInnerType(outInnerType reflect.Type) error {
 	switch outInnerType.Kind() {
 	case reflect.Struct:
 		return nil
@@ -74,7 +74,7 @@ func (decode *decoder) ensureOutInnerType(outInnerType reflect.Type) error {
 	return fmt.Errorf("cannot use " + outInnerType.String() + ", only struct supported")
 }
 
-func (decode *decoder) ensureOutCapacity(out *reflect.Value, csvLen int) error {
+func ensureOutCapacity(out *reflect.Value, csvLen int) error {
 	switch out.Kind() {
 	case reflect.Array:
 		if out.Len() < csvLen-1 { // Array is not big enough to hold the CSV content (arrays are not addressable)
@@ -90,7 +90,7 @@ func (decode *decoder) ensureOutCapacity(out *reflect.Value, csvLen int) error {
 	return nil
 }
 
-func (decode *decoder) getCSVFieldPosition(key string, structInfo *structInfo) *fieldInfo {
+func getCSVFieldPosition(key string, structInfo *structInfo) *fieldInfo {
 	for _, field := range structInfo.Fields {
 		if field.Key == key {
 			return &field
@@ -99,14 +99,14 @@ func (decode *decoder) getCSVFieldPosition(key string, structInfo *structInfo) *
 	return nil
 }
 
-func (decode *decoder) createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) reflect.Value {
+func createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) reflect.Value {
 	if outInnerWasPointer {
 		return reflect.New(outInnerType)
 	}
 	return reflect.New(outInnerType).Elem()
 }
 
-func (decode *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string) error {
+func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string) error {
 	oi := *outInner
 	if outInnerWasPointer {
 		oi = outInner.Elem()
