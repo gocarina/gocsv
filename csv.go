@@ -119,6 +119,6 @@ func Unmarshal(in io.Reader, out interface{}) (err error) {
 	return readTo(newDecoder(in), out)
 }
 
-func UnmarshalCSV(in *csv.Reader, out interface{}) (err error) {
+func UnmarshalCSV(in *csv.Reader, out interface{}) error {
 	return readTo(csvDecoder{in}, out)
 }
