@@ -36,20 +36,15 @@ func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 		return nil
 	}
 
-	tags := map[string]struct{}{}
-	for _, info := range structInfo {
-		tags[info.Key] = struct{}{}
+	headerMap := make(map[string]struct{}, len(headers))
+	for idx := range headers {
+		headerMap[headers[idx]] = struct{}{}
 	}
 
-	for tag := range tags {
-		for _, header := range headers {
-			if tag == header {
-				delete(tags, tag)
-			}
+	for _, info := range structInfo {
+		if _, ok := headerMap[info.Key]; !ok {
+			return fmt.Errorf("found unmatched struct tag %v", info.Key)
 		}
-	}
-	if len(tags) != 0 {
-		return fmt.Errorf("found the following unatched tags: %v", tags)
 	}
 	return nil
 }
