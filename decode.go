@@ -1,10 +1,15 @@
 package gocsv
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"reflect"
 )
+
+type Decoder interface {
+	getCSVRows() ([][]string, error)
+}
 
 type decoder struct {
 	in io.Reader
@@ -18,7 +23,15 @@ func (decode *decoder) getCSVRows() ([][]string, error) {
 	return getCSVReader(decode.in).ReadAll()
 }
 
-func (decode *decoder) readTo(out interface{}) error {
+type csvDecoder struct {
+	*csv.Reader
+}
+
+func (c csvDecoder) getCSVRows() ([][]string, error) {
+	return c.Reader.ReadAll()
+}
+
+func readTo(decoder Decoder, out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
 		return err
@@ -27,7 +40,7 @@ func (decode *decoder) readTo(out interface{}) error {
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	csvRows, err := decode.getCSVRows() // Get the CSV csvRows
+	csvRows, err := decoder.getCSVRows() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
