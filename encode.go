@@ -1,6 +1,7 @@
 package gocsv
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"reflect"
@@ -14,7 +15,7 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func (encode *encoder) writeTo(in interface{}) error {
+func writeTo(writer *csv.Writer, in interface{}) error {
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureInType(inType); err != nil {
 		return err
@@ -23,13 +24,14 @@ func (encode *encoder) writeTo(in interface{}) error {
 	if err := ensureInInnerType(inInnerType); err != nil {
 		return err
 	}
-	csvWriter := getCSVWriter(encode.out)           // Get the CSV writer
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.Key
 	}
-	csvWriter.Write(csvHeadersLabels)
+	if err := writer.Write(csvHeadersLabels); err != nil {
+		return err
+	}
 	inLen := inValue.Len()
 	for i := 0; i < inLen; i++ { // Iterate over container rows
 		for j, fieldInfo := range inInnerStructInfo.Fields {
@@ -40,10 +42,12 @@ func (encode *encoder) writeTo(in interface{}) error {
 			}
 			csvHeadersLabels[j] = inInnerFieldValue
 		}
-		csvWriter.Write(csvHeadersLabels)
+		if err := writer.Write(csvHeadersLabels); err != nil {
+			return err
+		}
 	}
-	csvWriter.Flush()
-	return csvWriter.Error()
+	writer.Flush()
+	return writer.Error()
 }
 
 // Check if the inType is an array or a slice
