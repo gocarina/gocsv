@@ -10,7 +10,7 @@ e,3,b`)
 	d := &decoder{in: b}
 
 	var samples []Sample
-	if err := d.readTo(&samples); err != nil {
+	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)
 	}
 	if len(samples) != 2 {
@@ -33,7 +33,7 @@ ff,gg,22,hh,ii,jj`)
 	d := &decoder{in: b}
 
 	var samples []SkipFieldSample
-	if err := d.readTo(&samples); err != nil {
+	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)
 	}
 	if len(samples) != 2 {
