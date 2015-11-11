@@ -31,6 +31,29 @@ func (c csvDecoder) getCSVRows() ([][]string, error) {
 	return c.Reader.ReadAll()
 }
 
+func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
+	if len(structInfo) == 0 {
+		return nil
+	}
+
+	tags := map[string]struct{}{}
+	for _, info := range structInfo {
+		tags[info.Key] = struct{}{}
+	}
+
+	for tag := range tags {
+		for _, header := range headers {
+			if tag == header {
+				delete(tags, tag)
+			}
+		}
+	}
+	if len(tags) != 0 {
+		return fmt.Errorf("found the following unatched tags: %v", tags)
+	}
+	return nil
+}
+
 func readTo(decoder Decoder, out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
@@ -44,6 +67,9 @@ func readTo(decoder Decoder, out interface{}) error {
 	if err != nil {
 		return err
 	}
+	headers := csvRows[0]
+	body := csvRows[1:]
+
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
@@ -53,27 +79,26 @@ func readTo(decoder Decoder, out interface{}) error {
 	}
 
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
-	for i, csvRow := range csvRows {                                             // Iterate over csv rows
-		if i == 0 { // First line of CSV is the header line
-			for j, csvColumnHeader := range csvRow {
-				if fieldInfo := getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
-					csvHeadersLabels[j] = fieldInfo
-				}
-			}
-		} else {
-			if len(outInnerStructInfo.Fields) != len(csvHeadersLabels) {
-				return fmt.Errorf("not all struct tags were matched to a csv header")
-			}
-			outInner := createNewOutInner(outInnerWasPointer, outInnerType)
-			for j, csvColumnContent := range csvRow {
-				if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-					if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.Num, csvColumnContent); err != nil { // Set field of struct
-						return err
-					}
-				}
-			}
-			outValue.Index(i - 1).Set(outInner)
+
+	for i, csvColumnHeader := range headers {
+		if fieldInfo := getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
+			csvHeadersLabels[i] = fieldInfo
 		}
+	}
+	if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
+		return err
+	}
+
+	for i, csvRow := range body { // Iterate over csv rows
+		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		for j, csvColumnContent := range csvRow {
+			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
+				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.Num, csvColumnContent); err != nil { // Set field of struct
+					return err
+				}
+			}
+		}
+		outValue.Index(i).Set(outInner)
 	}
 	return nil
 }
