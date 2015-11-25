@@ -11,13 +11,11 @@ import (
 
 type structInfo struct {
 	Fields []fieldInfo
-	Zero   reflect.Value
 }
 
 type fieldInfo struct {
-	Key       string
-	Num       int
-	OmitEmpty bool
+	Key string
+	Num int
 }
 
 var structMap = make(map[reflect.Type]*structInfo)
@@ -41,9 +39,7 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		fieldTag := field.Tag.Get("csv")
 		fieldTags := strings.Split(fieldTag, ",")
 		for _, fieldTagEntry := range fieldTags {
-			if fieldTagEntry == "omitempty" {
-				fieldInfo.OmitEmpty = true
-			} else {
+			if fieldTagEntry != "omitempty" {
 				fieldTag = fieldTagEntry
 			}
 		}
@@ -56,7 +52,7 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		}
 		fieldsList = append(fieldsList, fieldInfo)
 	}
-	stInfo = &structInfo{fieldsList, reflect.New(rType).Elem()}
+	stInfo = &structInfo{fieldsList}
 	return stInfo
 }
 
