@@ -64,3 +64,48 @@ e,3,b`)
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 }
+
+func Test_readTo_complex_embed(t *testing.T) {
+	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee
+ff,gg,22,hh,ii,jj`)
+	d := csvDecoder{csv.NewReader(b)}
+
+	var samples []SkipFieldSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "aa",
+			Sample: Sample{
+				Foo: "bb",
+				Bar: 11,
+				Baz: "cc",
+			},
+			Quux: "dd",
+		},
+		Corge: "ee",
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "ff",
+			Sample: Sample{
+				Foo: "gg",
+				Bar: 22,
+				Baz: "hh",
+			},
+			Quux: "ii",
+		},
+		Corge: "jj",
+	}
+	if expected != samples[1] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
+	}
+}
