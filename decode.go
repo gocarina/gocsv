@@ -43,7 +43,7 @@ func (decode *decoder) readTo(out interface{}) error {
 			outInner := decode.createNewOutInner(outInnerWasPointer, outInnerType)
 			for j, csvColumnContent := range csvRow {
 				if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-					if err := decode.setInnerField(&outInner, outInnerWasPointer, fieldInfo.Num, csvColumnContent); err != nil { // Set field of struct
+					if err := decode.setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
 						return err
 					}
 				}
@@ -106,11 +106,12 @@ func (decode *decoder) createNewOutInner(outInnerWasPointer bool, outInnerType r
 	return reflect.New(outInnerType).Elem()
 }
 
-func (decode *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer bool, fieldPosition int, value string) error {
+func (decode *decoder) setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string) error {
+	oi := *outInner
 	if outInnerWasPointer {
-		return setField(outInner.Elem().Field(fieldPosition), value)
+		oi = outInner.Elem()
 	}
-	return setField(outInner.Field(fieldPosition), value)
+	return setField(oi.FieldByIndex(index), value)
 }
 
 func (decode *decoder) getCSVRows() ([][]string, error) {

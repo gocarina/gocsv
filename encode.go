@@ -23,7 +23,7 @@ func (encode *encoder) writeTo(in interface{}) error {
 	if err := encode.ensureInInnerType(inInnerType); err != nil {
 		return err
 	}
-	csvWriter := getCSVWriter(encode.out)               // Get the CSV writer
+	csvWriter := getCSVWriter(encode.out)           // Get the CSV writer
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
@@ -34,7 +34,7 @@ func (encode *encoder) writeTo(in interface{}) error {
 	for i := 0; i < inLen; i++ { // Iterate over container rows
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
-			inInnerFieldValue, err := encode.getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.Num) // Get the correct field header <-> position
+			inInnerFieldValue, err := encode.getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
 			if err != nil {
 				return err
 			}
@@ -66,9 +66,10 @@ func (encode *encoder) ensureInInnerType(outInnerType reflect.Type) error {
 	return fmt.Errorf("cannot use " + outInnerType.String() + ", only struct supported")
 }
 
-func (encode *encoder) getInnerField(outInner reflect.Value, outInnerWasPointer bool, fieldPosition int) (string, error) {
+func (encode *encoder) getInnerField(outInner reflect.Value, outInnerWasPointer bool, index []int) (string, error) {
+	oi := outInner
 	if outInnerWasPointer {
-		return getFieldAsString(outInner.Elem().Field(fieldPosition))
+		oi = outInner.Elem()
 	}
-	return getFieldAsString(outInner.Field(fieldPosition))
+	return getFieldAsString(oi.FieldByIndex(index))
 }
