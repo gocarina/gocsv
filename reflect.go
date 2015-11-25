@@ -28,6 +28,12 @@ func getStructInfo(rType reflect.Type) *structInfo {
 	if ok {
 		return stInfo
 	}
+	fieldsList := getFieldInfos(rType)
+	stInfo = &structInfo{fieldsList}
+	return stInfo
+}
+
+func getFieldInfos(rType reflect.Type) []fieldInfo {
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -52,8 +58,7 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		}
 		fieldsList = append(fieldsList, fieldInfo)
 	}
-	stInfo = &structInfo{fieldsList}
-	return stInfo
+	return fieldsList
 }
 
 func getConcreteContainerInnerType(in reflect.Type) (inInnerWasPointer bool, inInnerType reflect.Type) {
