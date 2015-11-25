@@ -88,7 +88,7 @@ func readTo(decoder Decoder, out interface{}) error {
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.Num, csvColumnContent); err != nil { // Set field of struct
+				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
 					return err
 				}
 			}
@@ -150,9 +150,10 @@ func createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) refle
 	return reflect.New(outInnerType).Elem()
 }
 
-func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, fieldPosition int, value string) error {
+func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string) error {
+	oi := *outInner
 	if outInnerWasPointer {
-		return setField(outInner.Elem().Field(fieldPosition), value)
+		oi = outInner.Elem()
 	}
-	return setField(outInner.Field(fieldPosition), value)
+	return setField(oi.FieldByIndex(index), value)
 }
