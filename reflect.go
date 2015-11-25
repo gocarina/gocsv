@@ -11,13 +11,14 @@ import (
 
 type structInfo struct {
 	Fields []fieldInfo
-	Zero   reflect.Value
 }
 
+// fieldInfo is a struct field that should be mapped to a CSV column, or vica-versa
+// Each IndexChain element before the last is the index of an the embedded struct field
+// that defines Key as a tag
 type fieldInfo struct {
-	Key       string
-	Num       int
-	OmitEmpty bool
+	Key        string
+	IndexChain []int
 }
 
 var structMap = make(map[reflect.Type]*structInfo)
@@ -30,6 +31,12 @@ func getStructInfo(rType reflect.Type) *structInfo {
 	if ok {
 		return stInfo
 	}
+	fieldsList := getFieldInfos(rType, []int{})
+	stInfo = &structInfo{fieldsList}
+	return stInfo
+}
+
+func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -37,13 +44,17 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		if field.PkgPath != "" {
 			continue
 		}
-		fieldInfo := fieldInfo{Num: i}
+		indexChain := append(parentIndexChain, i)
+		// if the field is an embedded struct, create a fieldInfo for each of its fields
+		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
+			continue
+		}
+		fieldInfo := fieldInfo{IndexChain: indexChain}
 		fieldTag := field.Tag.Get("csv")
 		fieldTags := strings.Split(fieldTag, ",")
 		for _, fieldTagEntry := range fieldTags {
-			if fieldTagEntry == "omitempty" {
-				fieldInfo.OmitEmpty = true
-			} else {
+			if fieldTagEntry != "omitempty" {
 				fieldTag = fieldTagEntry
 			}
 		}
@@ -56,8 +67,7 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		}
 		fieldsList = append(fieldsList, fieldInfo)
 	}
-	stInfo = &structInfo{fieldsList, reflect.New(rType).Elem()}
-	return stInfo
+	return fieldsList
 }
 
 func getConcreteContainerInnerType(in reflect.Type) (inInnerWasPointer bool, inInnerType reflect.Type) {
