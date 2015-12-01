@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // --------------------------------------------------------------------------
@@ -123,7 +124,20 @@ func toUint(in interface{}) (uint64, error) {
 
 	switch inValue.Kind() {
 	case reflect.String:
-		return strconv.ParseUint(inValue.String(), 0, 64)
+		s := strings.TrimSpace(inValue.String())
+		if s == "" {
+			return 0, nil
+		}
+
+		// support the float input
+		if strings.Contains(s, ".") {
+			f, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				return 0, err
+			}
+			return uint64(f), nil
+		}
+		return strconv.ParseUint(s, 0, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
@@ -144,7 +158,11 @@ func toFloat(in interface{}) (float64, error) {
 
 	switch inValue.Kind() {
 	case reflect.String:
-		return strconv.ParseFloat(inValue.String(), 64)
+		s := strings.TrimSpace(inValue.String())
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseFloat(s, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
@@ -180,7 +198,7 @@ func setField(field reflect.Value, value string) error {
 			return err
 		}
 		field.SetInt(i)
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		ui, err := toUint(value)
 		if err != nil {
 			return err
@@ -244,6 +262,7 @@ func unmarshall(field reflect.Value, value string) error {
 				return err
 			}
 		}
+
 		return fmt.Errorf("No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller")
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
