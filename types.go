@@ -124,7 +124,11 @@ func toUint(in interface{}) (uint64, error) {
 
 	switch inValue.Kind() {
 	case reflect.String:
-		return strconv.ParseUint(inValue.String(), 0, 64)
+		s := strings.TrimSpace(inValue.String())
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseUint(s, 0, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
