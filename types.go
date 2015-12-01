@@ -185,7 +185,7 @@ func setField(field reflect.Value, value string) error {
 			return err
 		}
 		field.SetInt(i)
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		ui, err := toUint(value)
 		if err != nil {
 			return err
@@ -249,6 +249,7 @@ func unmarshall(field reflect.Value, value string) error {
 				return err
 			}
 		}
+
 		return fmt.Errorf("No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller")
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
