@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // --------------------------------------------------------------------------
@@ -144,7 +145,11 @@ func toFloat(in interface{}) (float64, error) {
 
 	switch inValue.Kind() {
 	case reflect.String:
-		return strconv.ParseFloat(inValue.String(), 64)
+		s := strings.TrimSpace(inValue.String())
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseFloat(s, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
