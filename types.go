@@ -128,6 +128,15 @@ func toUint(in interface{}) (uint64, error) {
 		if s == "" {
 			return 0, nil
 		}
+
+		// support the float input
+		if strings.Contains(s, ".") {
+			f, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				return 0, err
+			}
+			return uint64(f), nil
+		}
 		return strconv.ParseUint(s, 0, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
