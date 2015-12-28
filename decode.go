@@ -89,12 +89,11 @@ func readTo(decoder Decoder, out interface{}) error {
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
 				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
-					err = &csv.ParseError{
+					return &csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
 						Column: j + 1,
 						Err:    err,
 					}
-					return err
 				}
 			}
 		}
