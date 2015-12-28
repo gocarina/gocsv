@@ -24,6 +24,28 @@ e,3,b`)
 	if expected != samples[1] {
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
+
+	b = bytes.NewBufferString(`foo,BAR,Baz
+f,1,baz
+e,BAD_INPUT,b`)
+	d = csvDecoder{csv.NewReader(b)}
+	samples = []Sample{}
+	err := readTo(d, &samples)
+	if err == nil {
+		t.Fatalf("Expected error from bad input, got: %+v", samples)
+	}
+	switch actualErr := err.(type) {
+	case *csv.ParseError:
+		if actualErr.Line != 3 {
+			t.Fatalf("Expected csv.ParseError on line 3, got: %d", actualErr.Line)
+		}
+		if actualErr.Column != 2 {
+			t.Fatalf("Expected csv.ParseError in column 2, got: %d", actualErr.Column)
+		}
+	default:
+		t.Fatalf("incorrect error type: %T", err)
+	}
+
 }
 
 func Test_readTo_complex_embed(t *testing.T) {
