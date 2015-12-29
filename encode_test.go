@@ -25,7 +25,7 @@ func Test_writeTo(t *testing.T) {
 		{Foo: "f", Bar: 1, Baz: "baz"},
 		{Foo: "e", Bar: 3, Baz: "b"},
 	}
-	if err := e.writeTo(s); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -52,7 +52,7 @@ func Test_writeTo_embed(t *testing.T) {
 			Quux:   "zzz",
 		},
 	}
-	if err := e.writeTo(s); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,7 +86,7 @@ func Test_writeTo_complex_embed(t *testing.T) {
 			Corge:      "hhh",
 		},
 	}
-	if err := e.writeTo(sfs); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), sfs); err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
