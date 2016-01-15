@@ -63,6 +63,9 @@ func readTo(decoder Decoder, out interface{}) error {
 	if err != nil {
 		return err
 	}
+	if len(csvRows) == 0 {
+		return errors.New("empty csv file given")
+	}
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
