@@ -57,8 +57,10 @@ func toString(in interface{}) (string, error) {
 		return fmt.Sprintf("%v", inValue.Int()), nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return fmt.Sprintf("%v", inValue.Uint()), nil
-	case reflect.Float32, reflect.Float64:
-		return strconv.FormatFloat(inValue.Float(), byte('f'), 64, 64), nil
+	case reflect.Float32:
+		return strconv.FormatFloat(inValue.Float(), byte('f'), -1, 32), nil
+	case reflect.Float64:
+		return strconv.FormatFloat(inValue.Float(), byte('f'), -1, 64), nil
 	}
 	return "", fmt.Errorf("No known conversion from " + inValue.Type().String() + " to string")
 }
