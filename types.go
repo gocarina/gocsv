@@ -237,7 +237,12 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 		if err != nil {
 			return str, err
 		}
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float32:
+		str, err = toString(float32(field.Float()))
+		if err != nil {
+			return str, err
+		}
+	case reflect.Float64:
 		str, err = toString(field.Float())
 		if err != nil {
 			return str, err
