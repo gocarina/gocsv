@@ -3,6 +3,7 @@ package gocsv
 import (
 	"bytes"
 	"encoding/csv"
+	"math"
 	"testing"
 )
 
@@ -22,8 +23,8 @@ func Test_writeTo(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
 	s := []Sample{
-		{Foo: "f", Bar: 1, Baz: "baz"},
-		{Foo: "e", Bar: 3, Baz: "b"},
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1},
+		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13},
 	}
 	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
 		t.Fatal(err)
@@ -36,9 +37,9 @@ func Test_writeTo(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("expected 3 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"foo", "BAR", "Baz"}, lines[0])
-	assertLine(t, []string{"f", "1", "baz"}, lines[1])
-	assertLine(t, []string{"e", "3", "b"}, lines[2])
+	assertLine(t, []string{"foo", "BAR", "Baz", "Quux"}, lines[0])
+	assertLine(t, []string{"f", "1", "baz", "0.1"}, lines[1])
+	assertLine(t, []string{"e", "3", "b", "0.46153846"}, lines[2])
 }
 
 func Test_writeTo_embed(t *testing.T) {
@@ -47,9 +48,10 @@ func Test_writeTo_embed(t *testing.T) {
 	s := []EmbedSample{
 		{
 			Qux:    "aaa",
-			Sample: Sample{Foo: "f", Bar: 1, Baz: "baz"},
+			Sample: Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.2},
 			Ignore: "shouldn't be marshalled",
 			Quux:   "zzz",
+			Grault: math.Pi,
 		},
 	}
 	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
@@ -63,8 +65,8 @@ func Test_writeTo_embed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"first", "foo", "BAR", "Baz", "last"}, lines[0])
-	assertLine(t, []string{"aaa", "f", "1", "baz", "zzz"}, lines[1])
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "garply", "last"}, lines[0])
+	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "3.141592653589793", "zzz"}, lines[1])
 }
 
 func Test_writeTo_complex_embed(t *testing.T) {
@@ -75,11 +77,13 @@ func Test_writeTo_complex_embed(t *testing.T) {
 			EmbedSample: EmbedSample{
 				Qux: "aaa",
 				Sample: Sample{
-					Foo: "bbb",
-					Bar: 111,
-					Baz: "ddd",
+					Foo:  "bbb",
+					Bar:  111,
+					Baz:  "ddd",
+					Frop: 1.2e22,
 				},
 				Ignore: "eee",
+				Grault: 0.1,
 				Quux:   "fff",
 			},
 			MoreIgnore: "ggg",
@@ -96,6 +100,6 @@ func Test_writeTo_complex_embed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"first", "foo", "BAR", "Baz", "last", "abc"}, lines[0])
-	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "fff", "hhh"}, lines[1])
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "garply", "last", "abc"}, lines[0])
+	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "0.1", "fff", "hhh"}, lines[1])
 }

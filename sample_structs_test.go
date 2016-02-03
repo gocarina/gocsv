@@ -1,16 +1,18 @@
 package gocsv
 
 type Sample struct {
-	Foo string `csv:"foo"`
-	Bar int    `csv:"BAR"`
-	Baz string `csv:"Baz"`
+	Foo  string  `csv:"foo"`
+	Bar  int     `csv:"BAR"`
+	Baz  string  `csv:"Baz"`
+	Frop float32 `csv:"Quux"`
 }
 
 type EmbedSample struct {
 	Qux string `csv:"first"`
 	Sample
-	Ignore string `csv:"-"`
-	Quux   string `csv:"last"`
+	Ignore string  `csv:"-"`
+	Grault float64 `csv:"garply"`
+	Quux   string  `csv:"last"`
 }
 
 type SkipFieldSample struct {
