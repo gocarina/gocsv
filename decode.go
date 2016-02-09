@@ -2,9 +2,14 @@ package gocsv
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
+)
+
+var (
+ 	ErrEmptyCSV = errors.New("empty csv file given")
 )
 
 type Decoder interface {
@@ -62,16 +67,18 @@ func readTo(decoder Decoder, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	headers := csvRows[0]
-	body := csvRows[1:]
-
+	if len(csvRows) == 0 {
+		return ErrEmptyCSV
+	}
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
 	if len(outInnerStructInfo.Fields) == 0 {
-		return fmt.Errorf("no csv struct tags found")
+		return errors.New("no csv struct tags found")
 	}
+	headers := csvRows[0]
+	body := csvRows[1:]
 
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
 
@@ -81,10 +88,12 @@ func readTo(decoder Decoder, out interface{}) error {
 		}
 	}
 	if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
-		return err
+		if FailIfUnmatchedStructTags {
+			return err
+		}
 	}
 
-	for i, csvRow := range body { // Iterate over csv rows
+	for i, csvRow := range body {
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
