@@ -6,7 +6,14 @@ import (
 	"testing"
 )
 
+func resetFailIfUnmatchedStructTags(b bool) {
+	FailIfUnmatchedStructTags = b
+}
+
 func Test_readTo(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+
 	b := bytes.NewBufferString(`foo,BAR,Baz
 f,1,baz
 e,3,b`)
@@ -52,6 +59,9 @@ e,BAD_INPUT,b`)
 }
 
 func Test_readTo_complex_embed(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+	
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)

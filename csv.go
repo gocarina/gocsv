@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-var FailIfUnmatchedStructTags = false
+var FailIfUnmatchedStructTags = true
 
 // --------------------------------------------------------------------------
 // CSVWriter used to format CSV
