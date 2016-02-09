@@ -6,6 +6,7 @@ The GoCSV package aims to provide easy serialization and deserialization functio
 API and techniques inspired from http://labix.org/mgo
 
 [![GoDoc](https://godoc.org/github.com/gocarina/gocsv?status.png)](https://godoc.org/github.com/gocarina/gocsv)
+[![Build Status](https://travis-ci.org/gocarina/gocsv.svg?branch=master)](https://travis-ci.org/gocarina/gocsv)
 
 Full example
 =====
