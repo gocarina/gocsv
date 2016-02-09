@@ -8,6 +8,10 @@ import (
 	"reflect"
 )
 
+var (
+ 	ErrEmptyCSV = errors.New("empty csv file given")
+)
+
 type Decoder interface {
 	getCSVRows() ([][]string, error)
 }
@@ -64,7 +68,7 @@ func readTo(decoder Decoder, out interface{}) error {
 		return err
 	}
 	if len(csvRows) == 0 {
-		return errors.New("empty csv file given")
+		return ErrEmptyCSV
 	}
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
