@@ -94,6 +94,11 @@ func Marshal(in interface{}, out io.Writer) (err error) {
 	return writeTo(writer, in)
 }
 
+// MarshalChan returns the CSV read from the channel.
+func MarshalChan(c <- chan interface{}, out *csv.Writer) error {
+	return writeFromChan(out, c)
+}
+
 func MarshalCSV(in interface{}, out *csv.Writer) (err error) {
 	return writeTo(out, in)
 }

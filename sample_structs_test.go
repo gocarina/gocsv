@@ -4,7 +4,7 @@ type Sample struct {
 	Foo  string  `csv:"foo"`
 	Bar  int     `csv:"BAR"`
 	Baz  string  `csv:"Baz"`
-	Frop float32 `csv:"Quux"`
+	Frop float64 `csv:"Quux"`
 }
 
 type EmbedSample struct {

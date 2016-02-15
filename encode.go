@@ -15,6 +15,51 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
+func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
+	firstValue := <-c
+	inValue, inType := getConcreteReflectValueAndType(firstValue) // Get the concrete type
+	if err := ensureStructOrPtr(inType); err != nil {
+		return err
+	}
+	inInnerWasPointer := inType.Kind() == reflect.Ptr
+	inInnerStructInfo := getStructInfo(inType) // Get the inner struct info to get CSV annotations
+	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
+	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
+		csvHeadersLabels[i] = fieldInfo.Key
+	}
+	if err := writer.Write(csvHeadersLabels); err != nil {
+		return err
+	}
+	write := func (val reflect.Value) error {
+		for j, fieldInfo := range inInnerStructInfo.Fields {
+			csvHeadersLabels[j] = ""
+			inInnerFieldValue, err := getInnerField(val, inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
+			if err != nil {
+				return err
+			}
+			csvHeadersLabels[j] = inInnerFieldValue
+		}
+		if err := writer.Write(csvHeadersLabels); err != nil {
+			return err
+		}
+		return nil
+	}
+	if err := write(inValue); err != nil {
+		return err
+	}
+	for v := range c {
+		val, _ := getConcreteReflectValueAndType(v) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
+		if err := ensureStructOrPtr(inType); err != nil {
+			return err
+		}
+		if err := write(val); err != nil {
+			return err
+		}
+	}
+	writer.Flush()
+	return writer.Error()
+}
+
 func writeTo(writer *csv.Writer, in interface{}) error {
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureInType(inType); err != nil {
@@ -48,6 +93,16 @@ func writeTo(writer *csv.Writer, in interface{}) error {
 	}
 	writer.Flush()
 	return writer.Error()
+}
+
+func ensureStructOrPtr(t reflect.Type) error {
+	switch t.Kind() {
+	case reflect.Struct:
+		fallthrough
+	case reflect.Ptr:
+		return nil
+	}
+	return fmt.Errorf("cannot use " + t.String() + ", only slice or array supported")
 }
 
 // Check if the inType is an array or a slice

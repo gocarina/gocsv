@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"math"
 	"testing"
+	"strconv"
 )
 
 func assertLine(t *testing.T, expected, actual []string) {
@@ -13,9 +14,8 @@ func assertLine(t *testing.T, expected, actual []string) {
 	}
 	for i := range expected {
 		if expected[i] != actual[i] {
-			t.Fatalf("mismatch on field %d: %s != %s", i, expected[i], actual[i])
+			t.Fatalf("mismatch on field %d at line `%s`: %s != %s", i, expected, expected[i], actual[i])
 		}
-
 	}
 }
 
@@ -39,7 +39,7 @@ func Test_writeTo(t *testing.T) {
 	}
 	assertLine(t, []string{"foo", "BAR", "Baz", "Quux"}, lines[0])
 	assertLine(t, []string{"f", "1", "baz", "0.1"}, lines[1])
-	assertLine(t, []string{"e", "3", "b", "0.46153846"}, lines[2])
+	assertLine(t, []string{"e", "3", "b", "0.46153846153846156"}, lines[2])
 }
 
 func Test_writeTo_embed(t *testing.T) {
@@ -102,4 +102,34 @@ func Test_writeTo_complex_embed(t *testing.T) {
 	}
 	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "garply", "last", "abc"}, lines[0])
 	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "0.1", "fff", "hhh"}, lines[1])
+}
+
+func Test_writeToChan(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	c := make(chan interface{})
+	go func() {
+		for i := 0; i < 100; i++ {
+			v := Sample{Foo: "f", Bar: i, Baz: "baz" + strconv.Itoa(i), Frop: float64(i)}
+			c <- v
+		}
+		close(c)
+	}()
+	if err := MarshalChan(c, csv.NewWriter(e.out)); err != nil {
+		t.Fatal(err)
+	}
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 101 {
+		t.Fatalf("expected 100 lines, got %d", len(lines))
+	}
+	for i, l := range lines {
+		if i == 0 {
+			assertLine(t, []string{"foo", "BAR", "Baz", "Quux"}, l)
+			continue
+		}
+		assertLine(t, []string{"f", strconv.Itoa(i-1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64)}, l)
+	}
 }
