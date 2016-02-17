@@ -31,7 +31,7 @@ e,3,b`)
 	b = bytes.NewBufferString(`foo,BAR,Baz
 f,1,baz
 e,BAD_INPUT,b`)
-	d = &decoder{b}
+	d = &decoder{in: b}
 	samples = []Sample{}
 	err := readTo(d, &samples)
 	if err == nil {
@@ -60,6 +60,57 @@ ff,gg,22,hh,ii,jj`)
 	var samples []SkipFieldSample
 	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "aa",
+			Sample: Sample{
+				Foo: "bb",
+				Bar: 11,
+				Baz: "cc",
+			},
+			Quux: "dd",
+		},
+		Corge: "ee",
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "ff",
+			Sample: Sample{
+				Foo: "gg",
+				Bar: 22,
+				Baz: "hh",
+			},
+			Quux: "ii",
+		},
+		Corge: "jj",
+	}
+	if expected != samples[1] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
+	}
+}
+
+func Test_readEach(t *testing.T) {
+	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee
+ff,gg,22,hh,ii,jj`)
+	d := &decoder{in: b}
+
+	c := make(chan SkipFieldSample)
+	var samples []SkipFieldSample
+	go func() {
+		if err := readEach(d, c); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	for v := range c {
+		samples = append(samples, v)
 	}
 	if len(samples) != 2 {
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
@@ -131,5 +182,50 @@ func Test_maybeMissingStructFields(t *testing.T) {
 	mismatchedHeaders := []string{"foo", "qux", "quux", "corgi"}
 	if err := maybeMissingStructFields(structTags, mismatchedHeaders); err == nil {
 		t.Fatal("expected an error, but no error found")
+	}
+}
+
+func TestUnmarshalToCallback(t *testing.T) {
+	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee
+ff,gg,22,hh,ii,jj`)
+	var samples []SkipFieldSample
+	if err := UnmarshalBytesToCallback(b.Bytes(), func(s SkipFieldSample) {
+		samples = append(samples, s)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "aa",
+			Sample: Sample{
+				Foo: "bb",
+				Bar: 11,
+				Baz: "cc",
+			},
+			Quux: "dd",
+		},
+		Corge: "ee",
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "ff",
+			Sample: Sample{
+				Foo: "gg",
+				Bar: 22,
+				Baz: "hh",
+			},
+			Quux: "ii",
+		},
+		Corge: "jj",
+	}
+	if expected != samples[1] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
 	}
 }

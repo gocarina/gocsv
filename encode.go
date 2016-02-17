@@ -16,6 +16,7 @@ func newEncoder(out io.Writer) *encoder {
 }
 
 func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
+	// Get the first value. It wil determine the header structure.
 	firstValue := <-c
 	inValue, inType := getConcreteReflectValueAndType(firstValue) // Get the concrete type
 	if err := ensureStructOrPtr(inType); err != nil {

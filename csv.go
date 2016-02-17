@@ -12,6 +12,8 @@ import (
 	"io"
 	"os"
 	"strings"
+	"reflect"
+	"fmt"
 )
 
 var FailIfUnmatchedStructTags = false
@@ -126,6 +128,62 @@ func Unmarshal(in io.Reader, out interface{}) (err error) {
 	return readTo(newDecoder(in), out)
 }
 
+// UnmarshalCSV parses the CSV from the reader in the interface.
 func UnmarshalCSV(in *csv.Reader, out interface{}) error {
 	return readTo(csvDecoder{in}, out)
+}
+
+// UnmarshalToChan parses the CSV from the reader and send each value in the chan c.
+// The channel must have a concrete type.
+func UnmarshalToChan(in io.Reader, c interface{}) (err error) {
+	return readEach(newDecoder(in), c)
+}
+
+// UnmarshalStringToChan parses the CSV from the string and send each value in the chan c.
+// The channel must have a concrete type.
+func UnmarshalStringToChan(in string, c interface{}) (err error) {
+	return UnmarshalToChan(strings.NewReader(in), c)
+}
+
+// UnmarshalBytesToChan parses the CSV from the bytes and send each value in the chan c.
+// The channel must have a concrete type.
+func UnmarshalBytesToChan(in []byte, c interface{}) (err error) {
+	return UnmarshalToChan(bytes.NewReader(in), c)
+}
+
+// UnmarshalToCallback parses the CSV from the reader and send each value to the given func f.
+// The func must look like func(Struct).
+func UnmarshalToCallback(in io.Reader, f interface{}) (err error) {
+	valueFunc := reflect.ValueOf(f)
+	t := reflect.TypeOf(f)
+	if t.NumIn() != 1 {
+		return fmt.Errorf("the given function must have exactly one parameter")
+	}
+	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
+	go func() {
+		err = UnmarshalToChan(in, c.Interface())
+	}()
+	for {
+		if err != nil {
+			return err
+		}
+		v, notClosed := c.Recv()
+		if !notClosed || v.Interface() == nil {
+			break
+		}
+		valueFunc.Call([]reflect.Value{v})
+	}
+	return
+}
+
+// UnmarshalBytesToCallback parses the CSV from the bytes and send each value to the given func f.
+// The func must look like func(Struct).
+func UnmarshalBytesToCallback(in []byte, f interface{}) (err error) {
+	return UnmarshalToCallback(bytes.NewReader(in), f)
+}
+
+// UnmarshalStringToCallback parses the CSV from the string and send each value to the given func f.
+// The func must look like func(Struct).
+func UnmarshalStringToCallback(in string, c interface{}) (err error) {
+	return UnmarshalToCallback(strings.NewReader(in), c)
 }
