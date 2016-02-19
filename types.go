@@ -105,7 +105,11 @@ func toInt(in interface{}) (int64, error) {
 
 	switch inValue.Kind() {
 	case reflect.String:
-		return strconv.ParseInt(inValue.String(), 0, 64)
+		s := strings.TrimSpace(inValue.String())
+		if s == "" {
+			return 0, nil
+		}
+		return strconv.ParseInt(s, 0, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
