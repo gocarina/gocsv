@@ -19,7 +19,7 @@ type SimpleDecoder interface {
 }
 
 type decoder struct {
-	in io.Reader
+	in         io.Reader
 	csvDecoder *csvDecoder
 }
 
@@ -175,6 +175,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 			}
 		}
 		outValue.Send(outInner)
+		i++
 	}
 	outValue.Close()
 	return nil
