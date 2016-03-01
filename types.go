@@ -84,7 +84,7 @@ func toBool(in interface{}) (bool, error) {
 			return true, nil
 		}
 		return false, nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		i := inValue.Uint()
 		if i != 0 {
 			return true, nil
@@ -117,7 +117,7 @@ func toInt(in interface{}) (int64, error) {
 		return 0, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return inValue.Int(), nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return int64(inValue.Uint()), nil
 	case reflect.Float32, reflect.Float64:
 		return int64(inValue.Float()), nil
@@ -151,7 +151,7 @@ func toUint(in interface{}) (uint64, error) {
 		return 0, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return uint64(inValue.Int()), nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return inValue.Uint(), nil
 	case reflect.Float32, reflect.Float64:
 		return uint64(inValue.Float()), nil
@@ -176,7 +176,7 @@ func toFloat(in interface{}) (float64, error) {
 		return 0, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return float64(inValue.Int()), nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return float64(inValue.Uint()), nil
 	case reflect.Float32, reflect.Float64:
 		return inValue.Float(), nil
@@ -236,7 +236,7 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 		if err != nil {
 			return str, err
 		}
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		str, err = toString(field.Uint())
 		if err != nil {
 			return str, err
