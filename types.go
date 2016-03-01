@@ -55,7 +55,7 @@ func toString(in interface{}) (string, error) {
 		return "false", nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return fmt.Sprintf("%v", inValue.Int()), nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return fmt.Sprintf("%v", inValue.Uint()), nil
 	case reflect.Float32:
 		return strconv.FormatFloat(inValue.Float(), byte('f'), -1, 32), nil
