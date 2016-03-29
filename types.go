@@ -71,10 +71,13 @@ func toBool(in interface{}) (bool, error) {
 	switch inValue.Kind() {
 	case reflect.String:
 		s := inValue.String()
-		if s == "true" || s == "yes" || s == "1" {
+		switch s {
+		case "yes":
 			return true, nil
-		} else if s == "false" || s == "no" || s == "0" {
+		case "no", "":
 			return false, nil
+		default:
+			return strconv.ParseBool(s)
 		}
 	case reflect.Bool:
 		return inValue.Bool(), nil
