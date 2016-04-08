@@ -227,6 +227,12 @@ func setField(field reflect.Value, value string) error {
 
 func getFieldAsString(field reflect.Value) (str string, err error) {
 	switch field.Kind() {
+	case reflect.Interface:
+	case reflect.Ptr:
+		if field.IsNil() {
+			return "", nil
+		}
+		return getFieldAsString(field.Elem())
 	case reflect.String:
 		return field.String(), nil
 	case reflect.Bool:
