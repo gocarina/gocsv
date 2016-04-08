@@ -5,6 +5,7 @@ type Sample struct {
 	Bar  int     `csv:"BAR"`
 	Baz  string  `csv:"Baz"`
 	Frop float64 `csv:"Quux"`
+	Blah *int    `csv:"Blah"`
 }
 
 type EmbedSample struct {
