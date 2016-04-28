@@ -91,6 +91,7 @@ func readTo(decoder Decoder, out interface{}) error {
 	if len(outInnerStructInfo.Fields) == 0 {
 		return errors.New("no csv struct tags found")
 	}
+
 	headers := csvRows[0]
 	body := csvRows[1:]
 
@@ -104,6 +105,16 @@ func readTo(decoder Decoder, out interface{}) error {
 	if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
 		if FailIfUnmatchedStructTags {
 			return err
+		}
+	}
+	// Check that no header name is repeated twice
+	// TODO: Put into own method, add config variable and add test
+	headerMap := make(map[string]bool, len(headers))
+	for _, v := range headers {
+		if _, ok := headerMap[v]; ok {
+			return fmt.Errorf("Repeated header name: %v", v)
+		} else {
+			headerMap[v] = true
 		}
 	}
 
@@ -154,6 +165,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 			return err
 		}
 	}
+	// TODO: Add check for double header names here as well as for readTo (and somewhere else?)
 	i := 0
 	for {
 		line, err := decoder.getCSVRow()
