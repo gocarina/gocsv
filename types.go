@@ -188,32 +188,33 @@ func toFloat(in interface{}) (float64, error) {
 }
 
 func setField(field reflect.Value, value string) error {
-	switch field.Kind() {
-	case reflect.String:
+	// TODO: Same method for type switching in other functions
+	switch field.Interface().(type) {
+	case string:
 		s, err := toString(value)
 		if err != nil {
 			return err
 		}
 		field.SetString(s)
-	case reflect.Bool:
+	case bool:
 		b, err := toBool(value)
 		if err != nil {
 			return err
 		}
 		field.SetBool(b)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case int, int8, int16, int32, int64:
 		i, err := toInt(value)
 		if err != nil {
 			return err
 		}
 		field.SetInt(i)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case uint, uint8, uint16, uint32, uint64:
 		ui, err := toUint(value)
 		if err != nil {
 			return err
 		}
 		field.SetUint(ui)
-	case reflect.Float32, reflect.Float64:
+	case float32, float64:
 		f, err := toFloat(value)
 		if err != nil {
 			return err
