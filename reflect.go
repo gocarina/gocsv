@@ -60,10 +60,8 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		}
 		if fieldTag == "-" {
 			continue
-		} else if fieldTag != "" {
-			fieldInfo.Key = fieldTag
 		} else {
-			fieldInfo.Key = field.Name
+			fieldInfo.Key = fieldTag
 		}
 		fieldsList = append(fieldsList, fieldInfo)
 	}
