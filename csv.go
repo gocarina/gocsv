@@ -16,6 +16,8 @@ import (
 	"fmt"
 )
 
+// FailIfUnmatchedStructTags indicates whether it is considered an error when there is an unmatched
+// struct tag.
 var FailIfUnmatchedStructTags = false
 
 // --------------------------------------------------------------------------
@@ -101,6 +103,7 @@ func MarshalChan(c <- chan interface{}, out *csv.Writer) error {
 	return writeFromChan(out, c)
 }
 
+// MarshalCSV returns the CSV in writer from the interface.
 func MarshalCSV(in interface{}, out *csv.Writer) (err error) {
 	return writeTo(out, in)
 }
