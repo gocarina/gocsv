@@ -373,4 +373,26 @@ e,3,b`)
 	if samples[0].Foo != "b" {
 		t.Fatal("expected second tag value in multi tag struct field.")
 	}
+
+	b = bytes.NewBufferString(`foo,BAR
+e,3`)
+	d = &decoder{in: b}
+
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples[0].Foo != "e" {
+		t.Fatal("wrong value in multi tag struct field")
+	}
+
+	b = bytes.NewBufferString(`BAR,Baz
+3,b`)
+	d = &decoder{in: b}
+
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples[0].Foo != "b" {
+		t.Fatal("wrong value in multi tag struct field")
+	}
 }
