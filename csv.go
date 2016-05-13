@@ -9,16 +9,20 @@ package gocsv
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
-	"strings"
 	"reflect"
-	"fmt"
+	"strings"
 )
 
 // FailIfUnmatchedStructTags indicates whether it is considered an error when there is an unmatched
 // struct tag.
 var FailIfUnmatchedStructTags = false
+
+// FailIfDoubleHeaderNames indicates whether it is considered an error when a header name is repeated
+// in the csv header.
+var FailIfDoubleHeaderNames = false
 
 // --------------------------------------------------------------------------
 // CSVWriter used to format CSV
@@ -99,7 +103,7 @@ func Marshal(in interface{}, out io.Writer) (err error) {
 }
 
 // MarshalChan returns the CSV read from the channel.
-func MarshalChan(c <- chan interface{}, out *csv.Writer) error {
+func MarshalChan(c <-chan interface{}, out *csv.Writer) error {
 	return writeFromChan(out, c)
 }
 
