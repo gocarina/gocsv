@@ -51,7 +51,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 			continue
 		}
 		fieldTag := field.Tag.Get("csv")
-		fieldTags := strings.Split(fieldTag, ",")
+		fieldTags := strings.Split(fieldTag, TagSeparator)
 		for _, fieldTagEntry := range fieldTags {
 			if fieldTagEntry != "omitempty" {
 				fieldTag = fieldTagEntry

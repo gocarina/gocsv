@@ -396,3 +396,20 @@ e,3`)
 		t.Fatal("wrong value in multi tag struct field")
 	}
 }
+
+func TestStructTagSeparator(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,Baz
+e,3,b`)
+	d := &decoder{in: b}
+
+	TagSeparator = "|"
+
+	var samples []TagSeparatorSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+
+	if samples[0].Foo != "b" {
+		t.Fatal("expected second tag value in multi tag struct field.")
+	}
+}

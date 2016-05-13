@@ -24,6 +24,9 @@ var FailIfUnmatchedStructTags = false
 // in the csv header.
 var FailIfDoubleHeaderNames = false
 
+// TagSeparator defines seperator string for multiple csv tags in struct fields
+var TagSeparator = ","
+
 // --------------------------------------------------------------------------
 // CSVWriter used to format CSV
 
