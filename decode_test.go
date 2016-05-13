@@ -185,6 +185,71 @@ func Test_maybeMissingStructFields(t *testing.T) {
 	}
 }
 
+func Test_maybeDoubleHeaderNames(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,foo
+f,1,baz
+e,3,b`)
+	d := &decoder{in: b}
+	var samples []Sample
+
+	// *** check maybeDoubleHeaderNames
+	if err := maybeDoubleHeaderNames([]string{"foo", "BAR", "foo"}); err == nil {
+		t.Fatal("maybeDoubleHeaderNames did not raise an error when a should have.")
+	}
+
+	// *** check readTo
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	// Double header allowed, value should be of third row
+	if samples[0].Foo != "baz" {
+		t.Fatal("Double header allowed, value should be of third row but is not. Function called is readTo.")
+	}
+	// Double header not allowed, should fail
+	FailIfDoubleHeaderNames = true
+	if err := readTo(d, &samples); err == nil {
+		t.Fatal("Double header not allowed but no error raised. Function called is readTo.")
+	}
+
+	// *** check readEach
+	FailIfDoubleHeaderNames = false
+	b = bytes.NewBufferString(`foo,BAR,foo
+	f,1,baz
+	e,3,b`)
+	d = &decoder{in: b}
+	samples = samples[:0]
+	c := make(chan Sample)
+	go func() {
+		if err := readEach(d, c); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	for v := range c {
+		samples = append(samples, v)
+	}
+	// Double header allowed, value should be of third row
+	if samples[0].Foo != "baz" {
+		t.Fatal("Double header allowed, value should be of third row but is not. Function called is readEach.")
+	}
+	// Double header not allowed, should fail
+	FailIfDoubleHeaderNames = true
+	b = bytes.NewBufferString(`foo,BAR,foo
+f,1,baz
+e,3,b`)
+	d = &decoder{in: b}
+	c = make(chan Sample)
+	go func() {
+		if err := readEach(d, c); err == nil {
+			close(c)
+			t.Fatal("Double header not allowed but no error raised. Function called is readEach.")
+		}
+		close(c)
+	}()
+	for v := range c {
+		samples = append(samples, v)
+	}
+}
+
 func TestUnmarshalToCallback(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee

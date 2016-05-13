@@ -68,6 +68,19 @@ func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 	return nil
 }
 
+// Check that no header name is repeated twice
+func maybeDoubleHeaderNames(headers []string) error {
+	headerMap := make(map[string]bool, len(headers))
+	for _, v := range headers {
+		if _, ok := headerMap[v]; ok {
+			return fmt.Errorf("Repeated header name: %v", v)
+		} else {
+			headerMap[v] = true
+		}
+	}
+	return nil
+}
+
 func readTo(decoder Decoder, out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
@@ -107,14 +120,9 @@ func readTo(decoder Decoder, out interface{}) error {
 			return err
 		}
 	}
-	// Check that no header name is repeated twice
-	// TODO: Put into own method, add config variable and add test
-	headerMap := make(map[string]bool, len(headers))
-	for _, v := range headers {
-		if _, ok := headerMap[v]; ok {
-			return fmt.Errorf("Repeated header name: %v", v)
-		} else {
-			headerMap[v] = true
+	if FailIfDoubleHeaderNames {
+		if err := maybeDoubleHeaderNames(headers); err != nil {
+			return err
 		}
 	}
 
@@ -165,7 +173,12 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 			return err
 		}
 	}
-	// TODO: Add check for double header names here as well as for readTo (and somewhere else?)
+	if FailIfDoubleHeaderNames {
+		if err := maybeDoubleHeaderNames(headers); err != nil {
+			return err
+		}
+	}
+
 	i := 0
 	for {
 		line, err := decoder.getCSVRow()
