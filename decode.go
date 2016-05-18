@@ -114,8 +114,9 @@ func readTo(decoder Decoder, out interface{}) error {
 			csvHeadersLabels[i] = fieldInfo
 		}
 	}
-	if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
-		if FailIfUnmatchedStructTags {
+
+	if FailIfUnmatchedStructTags {
+		if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
 			return err
 		}
 	}
