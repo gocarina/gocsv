@@ -20,3 +20,8 @@ type SkipFieldSample struct {
 	MoreIgnore string `csv:"-"`
 	Corge      string `csv:"abc"`
 }
+
+type MultiTagSample struct {
+	Foo string `csv:"foo,Foo,FOO"`
+	Bar int    `csv:"bar,BAR"`
+}

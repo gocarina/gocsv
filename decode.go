@@ -9,7 +9,7 @@ import (
 )
 
 var (
- 	ErrEmptyCSV = errors.New("empty csv file given")
+	ErrEmptyCSV = errors.New("empty csv file given")
 )
 
 type Decoder interface {
@@ -47,8 +47,15 @@ func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 	}
 
 	for _, info := range structInfo {
-		if _, ok := headerMap[info.Key]; !ok {
-			return fmt.Errorf("found unmatched struct tag %v", info.Key)
+		found := false
+		for _, key := range info.keys {
+			if _, ok := headerMap[key]; ok {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("found unmatched struct field with tags %v", info.keys)
 		}
 	}
 	return nil
@@ -87,8 +94,9 @@ func readTo(decoder Decoder, out interface{}) error {
 			csvHeadersLabels[i] = fieldInfo
 		}
 	}
-	if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
-		if FailIfUnmatchedStructTags {
+
+	if FailIfUnmatchedStructTags {
+		if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
 			return err
 		}
 	}
@@ -149,7 +157,7 @@ func ensureOutCapacity(out *reflect.Value, csvLen int) error {
 
 func getCSVFieldPosition(key string, structInfo *structInfo) *fieldInfo {
 	for _, field := range structInfo.Fields {
-		if field.Key == key {
+		if field.matchesKey(key) {
 			return &field
 		}
 	}

@@ -55,13 +55,35 @@ e,BAD_INPUT,b`)
 	default:
 		t.Fatalf("incorrect error type: %T", err)
 	}
+}
 
+func Test_readTo_multipleTags(t *testing.T) {
+	b := bytes.NewBufferString(`Foo,bar
+abc,123
+def,234`)
+	d := &decoder{in: b}
+
+	var samples []MultiTagSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := MultiTagSample{Foo: "abc", Bar: 123}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = MultiTagSample{Foo: "def", Bar: 234}
+	if expected != samples[1] {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
+	}
 }
 
 func Test_readTo_complex_embed(t *testing.T) {
 	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
 	FailIfUnmatchedStructTags = false
-	
+
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
@@ -108,9 +130,9 @@ ff,gg,22,hh,ii,jj`)
 
 func Test_maybeMissingStructFields(t *testing.T) {
 	structTags := []fieldInfo{
-		{Key: "foo"},
-		{Key: "bar"},
-		{Key: "baz"},
+		{keys: []string{"foo"}},
+		{keys: []string{"bar"}},
+		{keys: []string{"baz"}},
 	}
 	badHeaders := []string{"hi", "mom", "bacon"}
 	goodHeaders := []string{"foo", "bar", "baz"}
