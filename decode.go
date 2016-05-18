@@ -9,7 +9,7 @@ import (
 )
 
 var (
- 	ErrEmptyCSV = errors.New("empty csv file given")
+	ErrEmptyCSV = errors.New("empty csv file given")
 )
 
 type Decoder interface {
