@@ -221,7 +221,46 @@ func setField(field reflect.Value, value string) error {
 		}
 		field.SetFloat(f)
 	default:
-		return unmarshall(field, value)
+		// Not a native type, check for unmarshal method
+		if err := unmarshall(field, value); err != nil {
+			// Could not unmarshal, check for kind, e.g. renamed type from basic type
+			switch field.Kind() {
+			case reflect.String:
+				s, err := toString(value)
+				if err != nil {
+					return err
+				}
+				field.SetString(s)
+			case reflect.Bool:
+				b, err := toBool(value)
+				if err != nil {
+					return err
+				}
+				field.SetBool(b)
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				i, err := toInt(value)
+				if err != nil {
+					return err
+				}
+				field.SetInt(i)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				ui, err := toUint(value)
+				if err != nil {
+					return err
+				}
+				field.SetUint(ui)
+			case reflect.Float32, reflect.Float64:
+				f, err := toFloat(value)
+				if err != nil {
+					return err
+				}
+				field.SetFloat(f)
+			default:
+				return err
+			}
+		} else {
+			return nil
+		}
 	}
 	return nil
 }

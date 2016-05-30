@@ -21,3 +21,12 @@ type SkipFieldSample struct {
 	MoreIgnore string `csv:"-"`
 	Corge      string `csv:"abc"`
 }
+
+// Testtype for unmarshal/marshal functions on renamed basic types
+type RenamedFloat64Unmarshaler float64
+type RenamedFloat64Default float64
+
+type RenamedSample struct {
+	RenamedFloatUnmarshaler RenamedFloat64Unmarshaler `csv:"foo"`
+	RenamedFloatDefault     RenamedFloat64Default     `csv:"bar"`
+}
