@@ -188,39 +188,78 @@ func toFloat(in interface{}) (float64, error) {
 }
 
 func setField(field reflect.Value, value string) error {
-	switch field.Kind() {
-	case reflect.String:
+	switch field.Interface().(type) {
+	case string:
 		s, err := toString(value)
 		if err != nil {
 			return err
 		}
 		field.SetString(s)
-	case reflect.Bool:
+	case bool:
 		b, err := toBool(value)
 		if err != nil {
 			return err
 		}
 		field.SetBool(b)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case int, int8, int16, int32, int64:
 		i, err := toInt(value)
 		if err != nil {
 			return err
 		}
 		field.SetInt(i)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case uint, uint8, uint16, uint32, uint64:
 		ui, err := toUint(value)
 		if err != nil {
 			return err
 		}
 		field.SetUint(ui)
-	case reflect.Float32, reflect.Float64:
+	case float32, float64:
 		f, err := toFloat(value)
 		if err != nil {
 			return err
 		}
 		field.SetFloat(f)
 	default:
-		return unmarshall(field, value)
+		// Not a native type, check for unmarshal method
+		if err := unmarshall(field, value); err != nil {
+			// Could not unmarshal, check for kind, e.g. renamed type from basic type
+			switch field.Kind() {
+			case reflect.String:
+				s, err := toString(value)
+				if err != nil {
+					return err
+				}
+				field.SetString(s)
+			case reflect.Bool:
+				b, err := toBool(value)
+				if err != nil {
+					return err
+				}
+				field.SetBool(b)
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				i, err := toInt(value)
+				if err != nil {
+					return err
+				}
+				field.SetInt(i)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				ui, err := toUint(value)
+				if err != nil {
+					return err
+				}
+				field.SetUint(ui)
+			case reflect.Float32, reflect.Float64:
+				f, err := toFloat(value)
+				if err != nil {
+					return err
+				}
+				field.SetFloat(f)
+			default:
+				return err
+			}
+		} else {
+			return nil
+		}
 	}
 	return nil
 }
@@ -233,35 +272,74 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 			return "", nil
 		}
 		return getFieldAsString(field.Elem())
-	case reflect.String:
-		return field.String(), nil
-	case reflect.Bool:
-		str, err = toString(field.Bool())
-		if err != nil {
-			return str, err
-		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		str, err = toString(field.Int())
-		if err != nil {
-			return str, err
-		}
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		str, err = toString(field.Uint())
-		if err != nil {
-			return str, err
-		}
-	case reflect.Float32:
-		str, err = toString(float32(field.Float()))
-		if err != nil {
-			return str, err
-		}
-	case reflect.Float64:
-		str, err = toString(field.Float())
-		if err != nil {
-			return str, err
-		}
 	default:
-		return marshall(field)
+		// Check if field is go native type
+		switch field.Interface().(type) {
+		case string:
+			return field.String(), nil
+		case bool:
+			str, err = toString(field.Bool())
+			if err != nil {
+				return str, err
+			}
+		case int, int8, int16, int32, int64:
+			str, err = toString(field.Int())
+			if err != nil {
+				return str, err
+			}
+		case uint, uint8, uint16, uint32, uint64:
+			str, err = toString(field.Uint())
+			if err != nil {
+				return str, err
+			}
+		case float32:
+			str, err = toString(float32(field.Float()))
+			if err != nil {
+				return str, err
+			}
+		case float64:
+			str, err = toString(field.Float())
+			if err != nil {
+				return str, err
+			}
+		default:
+			// Not a native type, check for marshal method
+			str, err = marshall(field)
+			if err != nil {
+				// If not marshal method, is field compatible with/renamed from native type
+				switch field.Kind() {
+				case reflect.String:
+					return field.String(), nil
+				case reflect.Bool:
+					str, err = toString(field.Bool())
+					if err != nil {
+						return str, err
+					}
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					str, err = toString(field.Int())
+					if err != nil {
+						return str, err
+					}
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					str, err = toString(field.Uint())
+					if err != nil {
+						return str, err
+					}
+				case reflect.Float32:
+					str, err = toString(float32(field.Float()))
+					if err != nil {
+						return str, err
+					}
+				case reflect.Float64:
+					str, err = toString(field.Float())
+					if err != nil {
+						return str, err
+					}
+				}
+			} else {
+				return str, nil
+			}
+		}
 	}
 	return str, nil
 }

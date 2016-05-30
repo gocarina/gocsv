@@ -3,6 +3,9 @@ package gocsv
 import (
 	"bytes"
 	"encoding/csv"
+	"io"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -293,4 +296,40 @@ ff,gg,22,hh,ii,jj`)
 	if expected != samples[1] {
 		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
 	}
+}
+
+// TestRenamedTypes tests for unmarshaling functions on redefined basic types.
+func TestRenamedTypesUnmarshal(t *testing.T) {
+	b := bytes.NewBufferString(`foo;bar
+1,4;1.5
+2,3;2.4`)
+	d := &decoder{in: b}
+	var samples []RenamedSample
+
+	// Set different csv field separator to enable comma in floats
+	SetCSVReader(func(in io.Reader) *csv.Reader {
+		csvin := csv.NewReader(in)
+		csvin.Comma = ';'
+		return csvin
+	})
+
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples[0].RenamedFloatUnmarshaler != 1.4 {
+		t.Fatalf("Parsed float value wrong for renamed float64 type. Expected 1.4, got %v.", samples[0].RenamedFloatUnmarshaler)
+	}
+	if samples[0].RenamedFloatDefault != 1.5 {
+		t.Fatalf("Parsed float value wrong for renamed float64 type without an explicit unmarshaler function. Expected 1.5, got %v.", samples[0].RenamedFloatDefault)
+	}
+}
+
+func (rf *RenamedFloat64Unmarshaler) UnmarshalCSV(csv string) (err error) {
+	converted := strings.Replace(csv, ",", ".", -1)
+	var f float64
+	if f, err = strconv.ParseFloat(converted, 64); err != nil {
+		return err
+	}
+	*rf = RenamedFloat64Unmarshaler(f)
+	return nil
 }
