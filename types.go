@@ -188,7 +188,6 @@ func toFloat(in interface{}) (float64, error) {
 }
 
 func setField(field reflect.Value, value string) error {
-	// TODO: Same method for type switching in other functions
 	switch field.Interface().(type) {
 	case string:
 		s, err := toString(value)
@@ -273,35 +272,74 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 			return "", nil
 		}
 		return getFieldAsString(field.Elem())
-	case reflect.String:
-		return field.String(), nil
-	case reflect.Bool:
-		str, err = toString(field.Bool())
-		if err != nil {
-			return str, err
-		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		str, err = toString(field.Int())
-		if err != nil {
-			return str, err
-		}
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		str, err = toString(field.Uint())
-		if err != nil {
-			return str, err
-		}
-	case reflect.Float32:
-		str, err = toString(float32(field.Float()))
-		if err != nil {
-			return str, err
-		}
-	case reflect.Float64:
-		str, err = toString(field.Float())
-		if err != nil {
-			return str, err
-		}
 	default:
-		return marshall(field)
+		// Check if field is go native type
+		switch field.Interface().(type) {
+		case string:
+			return field.String(), nil
+		case bool:
+			str, err = toString(field.Bool())
+			if err != nil {
+				return str, err
+			}
+		case int, int8, int16, int32, int64:
+			str, err = toString(field.Int())
+			if err != nil {
+				return str, err
+			}
+		case uint, uint8, uint16, uint32, uint64:
+			str, err = toString(field.Uint())
+			if err != nil {
+				return str, err
+			}
+		case float32:
+			str, err = toString(float32(field.Float()))
+			if err != nil {
+				return str, err
+			}
+		case float64:
+			str, err = toString(field.Float())
+			if err != nil {
+				return str, err
+			}
+		default:
+			// Not a native type, check for marshal method
+			str, err = marshall(field)
+			if err != nil {
+				// If not marshal method, is field compatible with/renamed from native type
+				switch field.Kind() {
+				case reflect.String:
+					return field.String(), nil
+				case reflect.Bool:
+					str, err = toString(field.Bool())
+					if err != nil {
+						return str, err
+					}
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					str, err = toString(field.Int())
+					if err != nil {
+						return str, err
+					}
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					str, err = toString(field.Uint())
+					if err != nil {
+						return str, err
+					}
+				case reflect.Float32:
+					str, err = toString(float32(field.Float()))
+					if err != nil {
+						return str, err
+					}
+				case reflect.Float64:
+					str, err = toString(field.Float())
+					if err != nil {
+						return str, err
+					}
+				}
+			} else {
+				return str, nil
+			}
+		}
 	}
 	return str, nil
 }

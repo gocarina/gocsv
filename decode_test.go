@@ -298,8 +298,8 @@ ff,gg,22,hh,ii,jj`)
 	}
 }
 
-// TestRenamedTypes tests for unmarshaling/marshaling functions on redefined basic types.
-func TestRenamedTypes(t *testing.T) {
+// TestRenamedTypes tests for unmarshaling functions on redefined basic types.
+func TestRenamedTypesUnmarshal(t *testing.T) {
 	b := bytes.NewBufferString(`foo;bar
 1,4;1.5
 2,3;2.4`)

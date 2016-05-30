@@ -3,8 +3,10 @@ package gocsv
 import (
 	"bytes"
 	"encoding/csv"
+	"io"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -135,4 +137,31 @@ func Test_writeToChan(t *testing.T) {
 		}
 		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), ""}, l)
 	}
+}
+
+// TestRenamedTypes tests for marshaling functions on redefined basic types.
+func TestRenamedTypesMarshal(t *testing.T) {
+	samples := []RenamedSample{
+		{RenamedFloatUnmarshaler: 1.4, RenamedFloatDefault: 1.5},
+		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
+	}
+
+	SetCSVWriter(func(out io.Writer) *csv.Writer {
+		csvout := csv.NewWriter(out)
+		csvout.Comma = ';'
+		return csvout
+	})
+	csvContent, err := MarshalString(&samples)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if csvContent != "foo;bar\n1,4;1.5\n2,3;2.4\n" {
+		t.Fatalf("Error marshaling floats with , as separator. Expected \nfoo;bar\n1,4;1.5\n2,3;2.4\ngot:\n%v", csvContent)
+	}
+}
+
+func (rf *RenamedFloat64Unmarshaler) MarshalCSV() (csv string, err error) {
+	csv = strconv.FormatFloat(float64(*rf), 'f', 1, 64)
+	csv = strings.Replace(csv, ".", ",", -1)
+	return csv, nil
 }
