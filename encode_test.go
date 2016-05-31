@@ -158,10 +158,30 @@ func TestRenamedTypesMarshal(t *testing.T) {
 	if csvContent != "foo;bar\n1,4;1.5\n2,3;2.4\n" {
 		t.Fatalf("Error marshaling floats with , as separator. Expected \nfoo;bar\n1,4;1.5\n2,3;2.4\ngot:\n%v", csvContent)
 	}
+
+	// Test that errors raised by MarshalCSV are correctly reported
+	samples = []RenamedSample{
+		{RenamedFloatUnmarshaler: 4.2, RenamedFloatDefault: 1.5},
+	}
+	_, err = MarshalString(&samples)
+	if _, ok := err.(MarshalError); !ok {
+		t.Fatalf("Expected UnmarshalError, got %v", err)
+	}
 }
 
 func (rf *RenamedFloat64Unmarshaler) MarshalCSV() (csv string, err error) {
+	if *rf == RenamedFloat64Unmarshaler(4.2) {
+		return "", MarshalError{"Test error: Invalid float 4.2"}
+	}
 	csv = strconv.FormatFloat(float64(*rf), 'f', 1, 64)
 	csv = strings.Replace(csv, ".", ",", -1)
 	return csv, nil
+}
+
+type MarshalError struct {
+	msg string
+}
+
+func (e MarshalError) Error() string {
+	return e.msg
 }
