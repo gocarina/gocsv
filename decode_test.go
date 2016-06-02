@@ -312,6 +312,8 @@ func TestRenamedTypesUnmarshal(t *testing.T) {
 		csvin.Comma = ';'
 		return csvin
 	})
+	// Switch back to default for tests executed after this
+	defer SetCSVReader(DefaultCSVReader)
 
 	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)

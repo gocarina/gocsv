@@ -151,6 +151,9 @@ func TestRenamedTypesMarshal(t *testing.T) {
 		csvout.Comma = ';'
 		return csvout
 	})
+	// Switch back to default for tests executed after this
+	defer SetCSVWriter(DefaultCSVWriter)
+
 	csvContent, err := MarshalString(&samples)
 	if err != nil {
 		t.Fatal(err)
