@@ -30,7 +30,7 @@ type TypeUnmarshaller interface {
 	UnmarshalCSV(string) error
 }
 
-// Custom error type to be raised in case there is no unmarshal function defined on type
+// NoUnmarshalFuncError is the custom error type to be raised in case there is no unmarshal function defined on type
 type NoUnmarshalFuncError struct {
 	msg string
 }
@@ -39,7 +39,7 @@ func (e NoUnmarshalFuncError) Error() string {
 	return e.msg
 }
 
-// Custom error type to be raised in case there is no marshal function defined on type
+// NoMarshalFuncError is the custom error type to be raised in case there is no marshal function defined on type
 type NoMarshalFuncError struct {
 	msg string
 }
