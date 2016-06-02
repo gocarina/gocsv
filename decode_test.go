@@ -371,7 +371,7 @@ e,3,b`)
 		t.Fatal(err)
 	}
 	if samples[0].Foo != "b" {
-		t.Fatal("expected second tag value in multi tag struct field.")
+		t.Fatalf("expected second tag value 'b' in multi tag struct field, got %v", samples[0].Foo)
 	}
 
 	b = bytes.NewBufferString(`foo,BAR
@@ -382,7 +382,7 @@ e,3`)
 		t.Fatal(err)
 	}
 	if samples[0].Foo != "e" {
-		t.Fatal("wrong value in multi tag struct field")
+		t.Fatalf("wrong value in multi tag struct field, expected 'e', got %v", samples[0].Foo)
 	}
 
 	b = bytes.NewBufferString(`BAR,Baz
