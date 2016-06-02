@@ -74,9 +74,8 @@ func maybeDoubleHeaderNames(headers []string) error {
 	for _, v := range headers {
 		if _, ok := headerMap[v]; ok {
 			return fmt.Errorf("Repeated header name: %v", v)
-		} else {
-			headerMap[v] = true
 		}
+		headerMap[v] = true
 	}
 	return nil
 }

@@ -322,9 +322,26 @@ func TestRenamedTypesUnmarshal(t *testing.T) {
 	if samples[0].RenamedFloatDefault != 1.5 {
 		t.Fatalf("Parsed float value wrong for renamed float64 type without an explicit unmarshaler function. Expected 1.5, got %v.", samples[0].RenamedFloatDefault)
 	}
+
+	// Test that errors raised by UnmarshalCSV are correctly reported
+	b = bytes.NewBufferString(`foo;bar
+4.2;2.4`)
+	d = &decoder{in: b}
+	samples = samples[:0]
+	if perr, _ := readTo(d, &samples).(*csv.ParseError); perr == nil {
+		t.Fatalf("Expected ParseError, got nil.")
+	} else if _, ok := perr.Err.(UnmarshalError); !ok {
+		t.Fatalf("Expected UnmarshalError, got %v", perr.Err)
+	}
 }
 
 func (rf *RenamedFloat64Unmarshaler) UnmarshalCSV(csv string) (err error) {
+	// Purely for testing purposes: Raise error on specific string
+	if csv == "4.2" {
+		return UnmarshalError{"Test error: Invalid float 4.2"}
+	}
+
+	// Convert , to . before parsing to create valid float strings
 	converted := strings.Replace(csv, ",", ".", -1)
 	var f float64
 	if f, err = strconv.ParseFloat(converted, 64); err != nil {
@@ -332,4 +349,12 @@ func (rf *RenamedFloat64Unmarshaler) UnmarshalCSV(csv string) (err error) {
 	}
 	*rf = RenamedFloat64Unmarshaler(f)
 	return nil
+}
+
+type UnmarshalError struct {
+	msg string
+}
+
+func (e UnmarshalError) Error() string {
+	return e.msg
 }
