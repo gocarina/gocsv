@@ -30,3 +30,8 @@ type RenamedSample struct {
 	RenamedFloatUnmarshaler RenamedFloat64Unmarshaler `csv:"foo"`
 	RenamedFloatDefault     RenamedFloat64Default     `csv:"bar"`
 }
+
+type MultiTagSample struct {
+	Foo string `csv:"Baz,foo"`
+	Bar int    `csv:"BAR"`
+}

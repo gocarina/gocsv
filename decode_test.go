@@ -360,3 +360,39 @@ type UnmarshalError struct {
 func (e UnmarshalError) Error() string {
 	return e.msg
 }
+
+func TestMultipleStructTags(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,Baz
+e,3,b`)
+	d := &decoder{in: b}
+
+	var samples []MultiTagSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples[0].Foo != "b" {
+		t.Fatalf("expected second tag value 'b' in multi tag struct field, got %v", samples[0].Foo)
+	}
+
+	b = bytes.NewBufferString(`foo,BAR
+e,3`)
+	d = &decoder{in: b}
+
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples[0].Foo != "e" {
+		t.Fatalf("wrong value in multi tag struct field, expected 'e', got %v", samples[0].Foo)
+	}
+
+	b = bytes.NewBufferString(`BAR,Baz
+3,b`)
+	d = &decoder{in: b}
+
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples[0].Foo != "b" {
+		t.Fatal("wrong value in multi tag struct field")
+	}
+}
