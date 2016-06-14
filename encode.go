@@ -15,7 +15,7 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
+func writeFromChan(writer *csv.Writer, c <-chan interface{}) error {
 	// Get the first value. It wil determine the header structure.
 	firstValue := <-c
 	inValue, inType := getConcreteReflectValueAndType(firstValue) // Get the concrete type
@@ -31,7 +31,7 @@ func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
 	if err := writer.Write(csvHeadersLabels); err != nil {
 		return err
 	}
-	write := func (val reflect.Value) error {
+	write := func(val reflect.Value) error {
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
 			inInnerFieldValue, err := getInnerField(val, inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
