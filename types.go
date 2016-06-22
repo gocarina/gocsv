@@ -383,6 +383,7 @@ func unmarshall(field reflect.Value, value string) error {
 			if err := finalField.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(value)); err != nil {
 				return err
 			}
+			return nil
 		}
 
 		return NoUnmarshalFuncError{"No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implements TypeUnmarshaller"}
