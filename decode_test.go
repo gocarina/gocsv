@@ -243,10 +243,8 @@ e,3,b`)
 	c = make(chan Sample)
 	go func() {
 		if err := readEach(d, c); err == nil {
-			close(c)
 			t.Fatal("Double header not allowed but no error raised. Function called is readEach.")
 		}
-		close(c)
 	}()
 	for v := range c {
 		samples = append(samples, v)

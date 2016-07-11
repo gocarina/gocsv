@@ -152,6 +152,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	if err := ensureOutType(outType); err != nil {
 		return err
 	}
+	defer outValue.Close()
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
@@ -161,7 +162,6 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 		return errors.New("no csv struct tags found")
 	}
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
-
 	for i, csvColumnHeader := range headers {
 		if fieldInfo := getCSVFieldPosition(csvColumnHeader, outInnerStructInfo); fieldInfo != nil {
 			csvHeadersLabels[i] = fieldInfo
@@ -177,7 +177,6 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 			return err
 		}
 	}
-
 	i := 0
 	for {
 		line, err := decoder.getCSVRow()
@@ -201,7 +200,6 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 		outValue.Send(outInner)
 		i++
 	}
-	outValue.Close()
 	return nil
 }
 
