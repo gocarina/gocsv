@@ -152,6 +152,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	if err := ensureOutType(outType); err != nil {
 		return err
 	}
+	defer outValue.Close()
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
@@ -201,7 +202,6 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 		outValue.Send(outInner)
 		i++
 	}
-	outValue.Close()
 	return nil
 }
 
