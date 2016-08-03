@@ -152,9 +152,9 @@ ff,gg,22,hh,ii,jj`)
 
 func Test_maybeMissingStructFields(t *testing.T) {
 	structTags := []fieldInfo{
-		{Key: "foo"},
-		{Key: "bar"},
-		{Key: "baz"},
+		{keys: []string{"foo"}},
+		{keys: []string{"bar"}},
+		{keys: []string{"baz"}},
 	}
 	badHeaders := []string{"hi", "mom", "bacon"}
 	goodHeaders := []string{"foo", "bar", "baz"}
@@ -400,7 +400,9 @@ func TestStructTagSeparator(t *testing.T) {
 e,3,b`)
 	d := &decoder{in: b}
 
+	defaultTagSeparator := TagSeparator
 	TagSeparator = "|"
+	defer func() { TagSeparator = defaultTagSeparator }()
 
 	var samples []TagSeparatorSample
 	if err := readTo(d, &samples); err != nil {

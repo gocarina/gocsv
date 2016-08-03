@@ -17,8 +17,21 @@ type structInfo struct {
 // Each IndexChain element before the last is the index of an the embedded struct field
 // that defines Key as a tag
 type fieldInfo struct {
-	Key        string
+	keys       []string
 	IndexChain []int
+}
+
+func (f fieldInfo) getFirstKey() string {
+	return f.keys[0]
+}
+
+func (f fieldInfo) matchesKey(key string) bool {
+	for _, k := range f.keys {
+		if key == k {
+			return true
+		}
+	}
+	return false
 }
 
 var structMap = make(map[reflect.Type]*structInfo)
@@ -50,21 +63,24 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
 			continue
 		}
+		fieldInfo := fieldInfo{IndexChain: indexChain}
 		fieldTag := field.Tag.Get("csv")
 		fieldTags := strings.Split(fieldTag, TagSeparator)
+		filteredTags := []string{}
 		for _, fieldTagEntry := range fieldTags {
 			if fieldTagEntry != "omitempty" {
-				fieldTag = fieldTagEntry
-				fieldInfo := fieldInfo{IndexChain: indexChain}
-
-				if fieldTag == "-" {
-					continue
-				} else {
-					fieldInfo.Key = fieldTag
-				}
-				fieldsList = append(fieldsList, fieldInfo)
+				filteredTags = append(filteredTags, fieldTagEntry)
 			}
 		}
+
+		if len(filteredTags) == 1 && filteredTags[0] == "-" {
+			continue
+		} else if len(filteredTags) > 0 && filteredTags[0] != "" {
+			fieldInfo.keys = filteredTags
+		} else {
+			fieldInfo.keys = []string{field.Name}
+		}
+		fieldsList = append(fieldsList, fieldInfo)
 	}
 	return fieldsList
 }
