@@ -45,6 +45,30 @@ func Test_writeTo(t *testing.T) {
 	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", ""}, lines[2])
 }
 
+func Test_writeTo_multipleTags(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []MultiTagSample{
+		{Foo: "abc", Bar: 123},
+		{Foo: "def", Bar: 234},
+	}
+	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 lines, got %d", len(lines))
+	}
+	// the first tag for each field is the encoding CSV header
+	assertLine(t, []string{"Baz", "BAR"}, lines[0])
+	assertLine(t, []string{"abc", "123"}, lines[1])
+	assertLine(t, []string{"def", "234"}, lines[2])
+}
+
 func Test_writeTo_embed(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}

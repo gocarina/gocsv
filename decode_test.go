@@ -152,9 +152,9 @@ ff,gg,22,hh,ii,jj`)
 
 func Test_maybeMissingStructFields(t *testing.T) {
 	structTags := []fieldInfo{
-		{Key: "foo"},
-		{Key: "bar"},
-		{Key: "baz"},
+		{keys: []string{"foo"}},
+		{keys: []string{"bar"}},
+		{keys: []string{"baz"}},
 	}
 	badHeaders := []string{"hi", "mom", "bacon"}
 	goodHeaders := []string{"foo", "bar", "baz"}
