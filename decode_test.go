@@ -400,7 +400,9 @@ func TestStructTagSeparator(t *testing.T) {
 e,3,b`)
 	d := &decoder{in: b}
 
+	defaultTagSeparator := TagSeparator
 	TagSeparator = "|"
+	defer func() { TagSeparator = defaultTagSeparator }()
 
 	var samples []TagSeparatorSample
 	if err := readTo(d, &samples); err != nil {
