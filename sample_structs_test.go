@@ -4,7 +4,8 @@ type Sample struct {
 	Foo  string  `csv:"foo"`
 	Bar  int     `csv:"BAR"`
 	Baz  string  `csv:"Baz"`
-	Frop float32 `csv:"Quux"`
+	Frop float64 `csv:"Quux"`
+	Blah *int    `csv:"Blah"`
 }
 
 type EmbedSample struct {
@@ -21,7 +22,21 @@ type SkipFieldSample struct {
 	Corge      string `csv:"abc"`
 }
 
+// Testtype for unmarshal/marshal functions on renamed basic types
+type RenamedFloat64Unmarshaler float64
+type RenamedFloat64Default float64
+
+type RenamedSample struct {
+	RenamedFloatUnmarshaler RenamedFloat64Unmarshaler `csv:"foo"`
+	RenamedFloatDefault     RenamedFloat64Default     `csv:"bar"`
+}
+
 type MultiTagSample struct {
-	Foo string `csv:"foo,Foo,FOO"`
-	Bar int    `csv:"bar,BAR"`
+	Foo string `csv:"Baz,foo"`
+	Bar int    `csv:"BAR"`
+}
+
+type TagSeparatorSample struct {
+	Foo string `csv:"Baz|foo"`
+	Bar int    `csv:"BAR"`
 }
