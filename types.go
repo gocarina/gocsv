@@ -206,6 +206,13 @@ func toFloat(in interface{}) (float64, error) {
 }
 
 func setField(field reflect.Value, value string) error {
+	if field.Kind() == reflect.Ptr {
+		if field.IsNil() {
+			field.Set(reflect.New(field.Type().Elem()))
+		}
+		field = field.Elem()
+	}
+
 	switch field.Interface().(type) {
 	case string:
 		s, err := toString(value)
