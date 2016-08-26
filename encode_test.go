@@ -25,9 +25,10 @@ func Test_writeTo(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
 	blah := 2
+	sptr := "*string"
 	s := []Sample{
-		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah},
-		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil},
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
+		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
 	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
 		t.Fatal(err)
@@ -40,9 +41,9 @@ func Test_writeTo(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("expected 3 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah"}, lines[0])
-	assertLine(t, []string{"f", "1", "baz", "0.1", "2"}, lines[1])
-	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", ""}, lines[2])
+	assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr"}, lines[0])
+	assertLine(t, []string{"f", "1", "baz", "0.1", "2", "*string"}, lines[1])
+	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", ""}, lines[2])
 }
 
 func Test_writeTo_multipleTags(t *testing.T) {
@@ -73,10 +74,11 @@ func Test_writeTo_embed(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
 	blah := 2
+	sptr := "*string"
 	s := []EmbedSample{
 		{
 			Qux:    "aaa",
-			Sample: Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.2, Blah: &blah},
+			Sample: Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.2, Blah: &blah, SPtr: &sptr},
 			Ignore: "shouldn't be marshalled",
 			Quux:   "zzz",
 			Grault: math.Pi,
@@ -93,13 +95,14 @@ func Test_writeTo_embed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "garply", "last"}, lines[0])
-	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "2", "3.141592653589793", "zzz"}, lines[1])
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "garply", "last"}, lines[0])
+	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "2", "*string", "3.141592653589793", "zzz"}, lines[1])
 }
 
 func Test_writeTo_complex_embed(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
+	sptr := "*string"
 	sfs := []SkipFieldSample{
 		{
 			EmbedSample: EmbedSample{
@@ -110,6 +113,7 @@ func Test_writeTo_complex_embed(t *testing.T) {
 					Baz:  "ddd",
 					Frop: 1.2e22,
 					Blah: nil,
+					SPtr: &sptr,
 				},
 				Ignore: "eee",
 				Grault: 0.1,
@@ -129,17 +133,18 @@ func Test_writeTo_complex_embed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "garply", "last", "abc"}, lines[0])
-	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "", "0.1", "fff", "hhh"}, lines[1])
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "garply", "last", "abc"}, lines[0])
+	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "", "*string", "0.1", "fff", "hhh"}, lines[1])
 }
 
 func Test_writeToChan(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
 	c := make(chan interface{})
+	sptr := "*string"
 	go func() {
 		for i := 0; i < 100; i++ {
-			v := Sample{Foo: "f", Bar: i, Baz: "baz" + strconv.Itoa(i), Frop: float64(i), Blah: nil}
+			v := Sample{Foo: "f", Bar: i, Baz: "baz" + strconv.Itoa(i), Frop: float64(i), Blah: nil, SPtr: &sptr}
 			c <- v
 		}
 		close(c)
@@ -156,10 +161,10 @@ func Test_writeToChan(t *testing.T) {
 	}
 	for i, l := range lines {
 		if i == 0 {
-			assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah"}, l)
+			assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr"}, l)
 			continue
 		}
-		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), ""}, l)
+		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string"}, l)
 	}
 }
 

@@ -4,15 +4,19 @@ import (
 	"bytes"
 	"encoding/csv"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 )
 
 func Test_readTo(t *testing.T) {
-	b := bytes.NewBufferString(`foo,BAR,Baz
-f,1,baz
-e,3,b`)
+	blah := 0
+	sptr := "*string"
+	sptr2 := ""
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr
+f,1,baz,,*string
+e,3,b,,`)
 	d := &decoder{in: b}
 
 	var samples []Sample
@@ -22,12 +26,14 @@ e,3,b`)
 	if len(samples) != 2 {
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
 	}
-	expected := Sample{Foo: "f", Bar: 1, Baz: "baz"}
-	if expected != samples[0] {
+
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr}
+	if !reflect.DeepEqual(expected, samples[0]) {
 		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
 	}
-	expected = Sample{Foo: "e", Bar: 3, Baz: "b"}
-	if expected != samples[1] {
+
+	expected = Sample{Foo: "e", Bar: 3, Baz: "b", Blah: &blah, SPtr: &sptr2}
+	if !reflect.DeepEqual(expected, samples[1]) {
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 
