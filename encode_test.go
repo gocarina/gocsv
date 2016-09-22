@@ -30,7 +30,7 @@ func Test_writeTo(t *testing.T) {
 		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), s, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,6 +46,30 @@ func Test_writeTo(t *testing.T) {
 	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", ""}, lines[2])
 }
 
+func Test_writeTo_NoHeaders(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	blah := 2
+	sptr := "*string"
+	s := []Sample{
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
+		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
+	}
+	if err := writeTo(csv.NewWriter(e.out), s, true); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"f", "1", "baz", "0.1", "2", "*string"}, lines[0])
+	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", ""}, lines[1])
+}
+
 func Test_writeTo_multipleTags(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
@@ -53,7 +77,7 @@ func Test_writeTo_multipleTags(t *testing.T) {
 		{Foo: "abc", Bar: 123},
 		{Foo: "def", Bar: 234},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), s, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -84,7 +108,7 @@ func Test_writeTo_embed(t *testing.T) {
 			Grault: math.Pi,
 		},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), s, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -123,7 +147,7 @@ func Test_writeTo_complex_embed(t *testing.T) {
 			Corge:      "hhh",
 		},
 	}
-	if err := writeTo(csv.NewWriter(e.out), sfs); err != nil {
+	if err := writeTo(csv.NewWriter(e.out), sfs, false); err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
