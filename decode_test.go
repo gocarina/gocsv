@@ -214,6 +214,21 @@ e,3,b`)
 	if samples[0].Foo != "baz" {
 		t.Fatal("Double header allowed, value should be of third row but is not. Function called is readTo.")
 	}
+
+	b = bytes.NewBufferString(`foo,BAR,foo
+f,1,baz
+e,3,b`)
+	d = &decoder{in: b}
+	ShouldAlignDuplicateHeadersWithStructFieldOrder = true
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	// Double header allowed, value should be of first row
+	if samples[0].Foo != "f" {
+		t.Fatal("Double header allowed, value should be of first row but is not. Function called is readTo.")
+	}
+
+	ShouldAlignDuplicateHeadersWithStructFieldOrder = false
 	// Double header not allowed, should fail
 	FailIfDoubleHeaderNames = true
 	if err := readTo(d, &samples); err == nil {
@@ -223,8 +238,8 @@ e,3,b`)
 	// *** check readEach
 	FailIfDoubleHeaderNames = false
 	b = bytes.NewBufferString(`foo,BAR,foo
-	f,1,baz
-	e,3,b`)
+f,1,baz
+e,3,b`)
 	d = &decoder{in: b}
 	samples = samples[:0]
 	c := make(chan Sample)
