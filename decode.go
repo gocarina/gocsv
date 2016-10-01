@@ -38,8 +38,13 @@ func (decode *decoder) getCSVRow() ([]string, error) {
 	return decode.csvDecoder.Read()
 }
 
+type CSVReader interface {
+	Read() ([]string, error)
+	ReadAll() ([][]string, error)
+}
+
 type csvDecoder struct {
-	*csv.Reader
+	CSVReader
 }
 
 func (c csvDecoder) getCSVRows() ([][]string, error) {
