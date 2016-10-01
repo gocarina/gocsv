@@ -145,7 +145,7 @@ func Unmarshal(in io.Reader, out interface{}) (err error) {
 }
 
 // UnmarshalCSV parses the CSV from the reader in the interface.
-func UnmarshalCSV(in *csv.Reader, out interface{}) error {
+func UnmarshalCSV(in CSVReader, out interface{}) error {
 	return readTo(csvDecoder{in}, out)
 }
 
