@@ -24,7 +24,8 @@ var FailIfUnmatchedStructTags = false
 // in the csv header.
 var FailIfDoubleHeaderNames = false
 
-// Indicates whether we should align duplicate CSV headers per their alignment in the struct definition
+// ShouldAlignDuplicateHeadersWithStructFieldOrder indicates whether we should align duplicate CSV
+// headers per their alignment in the struct definition.
 var ShouldAlignDuplicateHeadersWithStructFieldOrder = false
 
 // TagSeparator defines seperator string for multiple csv tags in struct fields
