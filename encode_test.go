@@ -225,6 +225,28 @@ func TestRenamedTypesMarshal(t *testing.T) {
 	}
 }
 
+// TestCustomTagSeparatorMarshal tests for custom tag separator in marshalling.
+func TestCustomTagSeparatorMarshal(t *testing.T) {
+	samples := []RenamedSample{
+		{RenamedFloatUnmarshaler: 1.4, RenamedFloatDefault: 1.5},
+		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
+	}
+
+	TagSeparator = " | "
+	// Switch back to default TagSeparator after this
+	defer func () {
+		TagSeparator = ","
+	}()
+
+	csvContent, err := MarshalString(&samples)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if csvContent != "foo|bar\n1,4|1.5\n2,3|2.4\n" {
+		t.Fatalf("Error marshaling floats with , as separator. Expected \nfoo|bar\n1,4|1.5\n2,3|2.4\ngot:\n%v", csvContent)
+	}
+}
+
 func (rf *RenamedFloat64Unmarshaler) MarshalCSV() (csv string, err error) {
 	if *rf == RenamedFloat64Unmarshaler(4.2) {
 		return "", MarshalError{"Test error: Invalid float 4.2"}
