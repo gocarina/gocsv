@@ -163,19 +163,23 @@ func UnmarshalCSV(in CSVReader, out interface{}) error {
 
 // UnmarshalToChan parses the CSV from the reader and send each value in the chan c.
 // The channel must have a concrete type.
-func UnmarshalToChan(in io.Reader, c interface{}) (err error) {
+func UnmarshalToChan(in io.Reader, c interface{}) error {
+	fmt.Println("HELLO")
+	if c == nil {
+		return fmt.Errorf("goscv: channel is %v", c)
+	}
 	return readEach(newDecoder(in), c)
 }
 
 // UnmarshalStringToChan parses the CSV from the string and send each value in the chan c.
 // The channel must have a concrete type.
-func UnmarshalStringToChan(in string, c interface{}) (err error) {
+func UnmarshalStringToChan(in string, c interface{}) error {
 	return UnmarshalToChan(strings.NewReader(in), c)
 }
 
 // UnmarshalBytesToChan parses the CSV from the bytes and send each value in the chan c.
 // The channel must have a concrete type.
-func UnmarshalBytesToChan(in []byte, c interface{}) (err error) {
+func UnmarshalBytesToChan(in []byte, c interface{}) error {
 	return UnmarshalToChan(bytes.NewReader(in), c)
 }
 
