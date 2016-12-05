@@ -164,7 +164,6 @@ func UnmarshalCSV(in CSVReader, out interface{}) error {
 // UnmarshalToChan parses the CSV from the reader and send each value in the chan c.
 // The channel must have a concrete type.
 func UnmarshalToChan(in io.Reader, c interface{}) error {
-	fmt.Println("HELLO")
 	if c == nil {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
