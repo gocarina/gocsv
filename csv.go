@@ -218,3 +218,25 @@ func UnmarshalBytesToCallback(in []byte, f interface{}) (err error) {
 func UnmarshalStringToCallback(in string, c interface{}) (err error) {
 	return UnmarshalToCallback(strings.NewReader(in), c)
 }
+
+func CSVToMap(in io.Reader) (map[string]string, error) {
+	decoder := newDecoder(in)
+	header, err := decoder.getCSVRow()
+	if err != nil {
+		return nil, err
+	}
+	if len(header) != 2 {
+		return nil, fmt.Errorf("maps can only be created for csv of two columns")
+	}
+	m := make(map[string]string)
+	for {
+		line, err := decoder.getCSVRow()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		m[line[0]] = line[1]
+	}
+	return m, nil
+}

@@ -434,3 +434,36 @@ e,3,b`)
 		t.Fatal("expected second tag value in multi tag struct field.")
 	}
 }
+
+func TestCSVToMap(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR
+4,Jose
+2,Daniel
+5,Vincent`)
+	m, err := CSVToMap(bytes.NewReader(b.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["4"] != "Jose" {
+		t.Fatal("Expected Jose got", m["4"])
+	}
+	if m["2"] != "Daniel" {
+		t.Fatal("Expected Daniel got", m["2"])
+	}
+	if m["5"] != "Vincent" {
+		t.Fatal("Expected Vincent got", m["5"])
+	}
+
+	b = bytes.NewBufferString(`foo,BAR,Baz
+e,3,b`)
+	_, err = CSVToMap(bytes.NewReader(b.Bytes()))
+	if err == nil {
+		t.Fatal("Something went wrong")
+	}
+	b = bytes.NewBufferString(`foo
+e`)
+	_, err = CSVToMap(bytes.NewReader(b.Bytes()))
+	if err == nil {
+		t.Fatal("Something went wrong")
+	}
+}
