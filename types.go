@@ -400,7 +400,6 @@ func unmarshall(field reflect.Value, value string) error {
 			dupField = reflect.New(field.Type().Elem())
 			field.Set(dupField)
 			return unMarshallIt(dupField)
-			break
 		}
 		dupField = dupField.Elem()
 	}
