@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -17,9 +18,12 @@ func Test_readTo(t *testing.T) {
 	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
 	FailIfUnmatchedStructTags = false
 
-	b := bytes.NewBufferString(`foo,BAR,Baz
-f,1,baz
-e,3,b`)
+	blah := 0
+	sptr := "*string"
+	sptr2 := ""
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr
+f,1,baz,,*string
+e,3,b,,`)
 	d := &decoder{in: b}
 
 	var samples []Sample
@@ -29,12 +33,14 @@ e,3,b`)
 	if len(samples) != 2 {
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
 	}
-	expected := Sample{Foo: "f", Bar: 1, Baz: "baz"}
-	if expected != samples[0] {
+
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr}
+	if !reflect.DeepEqual(expected, samples[0]) {
 		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
 	}
-	expected = Sample{Foo: "e", Bar: 3, Baz: "b"}
-	if expected != samples[1] {
+
+	expected = Sample{Foo: "e", Bar: 3, Baz: "b", Blah: &blah, SPtr: &sptr2}
+	if !reflect.DeepEqual(expected, samples[1]) {
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 
@@ -246,6 +252,21 @@ e,3,b`)
 	if samples[0].Foo != "baz" {
 		t.Fatal("Double header allowed, value should be of third row but is not. Function called is readTo.")
 	}
+
+	b = bytes.NewBufferString(`foo,BAR,foo
+f,1,baz
+e,3,b`)
+	d = &decoder{in: b}
+	ShouldAlignDuplicateHeadersWithStructFieldOrder = true
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	// Double header allowed, value should be of first row
+	if samples[0].Foo != "f" {
+		t.Fatal("Double header allowed, value should be of first row but is not. Function called is readTo.")
+	}
+
+	ShouldAlignDuplicateHeadersWithStructFieldOrder = false
 	// Double header not allowed, should fail
 	FailIfDoubleHeaderNames = true
 	if err := readTo(d, &samples); err == nil {
@@ -255,8 +276,8 @@ e,3,b`)
 	// *** check readEach
 	FailIfDoubleHeaderNames = false
 	b = bytes.NewBufferString(`foo,BAR,foo
-	f,1,baz
-	e,3,b`)
+f,1,baz
+e,3,b`)
 	d = &decoder{in: b}
 	samples = samples[:0]
 	c := make(chan Sample)
@@ -452,5 +473,38 @@ e,3,b`)
 
 	if samples[0].Foo != "b" {
 		t.Fatal("expected second tag value in multi tag struct field.")
+	}
+}
+
+func TestCSVToMap(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR
+4,Jose
+2,Daniel
+5,Vincent`)
+	m, err := CSVToMap(bytes.NewReader(b.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["4"] != "Jose" {
+		t.Fatal("Expected Jose got", m["4"])
+	}
+	if m["2"] != "Daniel" {
+		t.Fatal("Expected Daniel got", m["2"])
+	}
+	if m["5"] != "Vincent" {
+		t.Fatal("Expected Vincent got", m["5"])
+	}
+
+	b = bytes.NewBufferString(`foo,BAR,Baz
+e,3,b`)
+	_, err = CSVToMap(bytes.NewReader(b.Bytes()))
+	if err == nil {
+		t.Fatal("Something went wrong")
+	}
+	b = bytes.NewBufferString(`foo
+e`)
+	_, err = CSVToMap(bytes.NewReader(b.Bytes()))
+	if err == nil {
+		t.Fatal("Something went wrong")
 	}
 }
