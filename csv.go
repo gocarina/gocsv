@@ -18,7 +18,7 @@ import (
 
 // FailIfUnmatchedStructTags indicates whether it is considered an error when there is an unmatched
 // struct tag.
-var FailIfUnmatchedStructTags = false
+var FailIfUnmatchedStructTags = true
 
 // FailIfDoubleHeaderNames indicates whether it is considered an error when a header name is repeated
 // in the csv header.
