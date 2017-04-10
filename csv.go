@@ -184,19 +184,22 @@ func UnmarshalBytesToChan(in []byte, c interface{}) error {
 
 // UnmarshalToCallback parses the CSV from the reader and send each value to the given func f.
 // The func must look like func(Struct).
-func UnmarshalToCallback(in io.Reader, f interface{}) (err error) {
+func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	valueFunc := reflect.ValueOf(f)
 	t := reflect.TypeOf(f)
 	if t.NumIn() != 1 {
 		return fmt.Errorf("the given function must have exactly one parameter")
 	}
+	cerr := make(chan error)
 	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
 	go func() {
-		err = UnmarshalToChan(in, c.Interface())
+		cerr <- UnmarshalToChan(in, c.Interface())
 	}()
 	for {
-		if err != nil {
+		select {
+		case err := <-cerr:
 			return err
+		default:
 		}
 		v, notClosed := c.Recv()
 		if !notClosed || v.Interface() == nil {
@@ -204,12 +207,12 @@ func UnmarshalToCallback(in io.Reader, f interface{}) (err error) {
 		}
 		valueFunc.Call([]reflect.Value{v})
 	}
-	return
+	return nil
 }
 
 // UnmarshalBytesToCallback parses the CSV from the bytes and send each value to the given func f.
 // The func must look like func(Struct).
-func UnmarshalBytesToCallback(in []byte, f interface{}) (err error) {
+func UnmarshalBytesToCallback(in []byte, f interface{}) error {
 	return UnmarshalToCallback(bytes.NewReader(in), f)
 }
 
