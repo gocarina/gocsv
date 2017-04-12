@@ -224,8 +224,23 @@ func Test_maybeMissingStructFields(t *testing.T) {
 	// not all structTags match, but there's plenty o' headers; expect
 	// error
 	mismatchedHeaders := []string{"foo", "qux", "quux", "corgi"}
-	if err := maybeMissingStructFields(structTags, mismatchedHeaders); err == nil {
+	err := maybeMissingStructFields(structTags, mismatchedHeaders)
+	if err == nil {
 		t.Fatal("expected an error, but no error found")
+	}
+	switch e := err.(type) {
+	case MissingColumnsError:
+		if len(e.MissingColumnNames) != 2 {
+			t.Fatal("expected two missing columns")
+		}
+		if e.MissingColumnNames[0] != "bar" {
+			t.Fatal("expected missing bar")
+		}
+		if e.MissingColumnNames[1] != "baz" {
+			t.Fatal("expected missing baz")
+		}
+	default:
+		t.Fatal("expected a MissingColumnsError but did not get one")
 	}
 }
 
