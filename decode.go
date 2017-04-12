@@ -12,6 +12,14 @@ var (
 	ErrEmptyCSV = errors.New("empty csv file given")
 )
 
+type MissingColumnsError struct {
+	MissingColumnNames []string
+}
+
+func (e MissingColumnsError) Error() string {
+	return fmt.Sprintf("unable to find these columns: %v", e.MissingColumnNames)
+}
+
 // Decoder .
 type Decoder interface {
 	getCSVRows() ([][]string, error)
@@ -69,6 +77,7 @@ func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 		headerMap[headers[idx]] = struct{}{}
 	}
 
+	missingColumns := []string{}
 	for _, info := range structInfo {
 		found := false
 		for _, key := range info.keys {
@@ -78,8 +87,11 @@ func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 			}
 		}
 		if !found {
-			return fmt.Errorf("found unmatched struct field with tags %v", info.keys)
+			missingColumns = append(missingColumns, info.getFirstKey())
 		}
+	}
+	if len(missingColumns) > 0 {
+		return MissingColumnsError{MissingColumnNames: missingColumns}
 	}
 	return nil
 }
