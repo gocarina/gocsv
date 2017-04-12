@@ -423,7 +423,9 @@ e,3,b`)
 
 	defaultTagSeparator := TagSeparator
 	TagSeparator = "|"
-	defer func() { TagSeparator = defaultTagSeparator }()
+	defer func() {
+		TagSeparator = defaultTagSeparator
+	}()
 
 	var samples []TagSeparatorSample
 	if err := readTo(d, &samples); err != nil {
@@ -465,5 +467,46 @@ e`)
 	_, err = CSVToMap(bytes.NewReader(b.Bytes()))
 	if err == nil {
 		t.Fatal("Something went wrong")
+	}
+}
+
+type trimDecoder struct {
+	csvReader *csv.Reader
+}
+
+func (c *trimDecoder) getCSVRow() ([]string, error) {
+	recoder, err := c.csvReader.Read()
+	for i, r := range recoder {
+		recoder[i] = strings.TrimRight(r, " ")
+	}
+	return recoder, err
+}
+
+func TestUnmarshalToDecoder(t *testing.T) {
+	blah := 0
+	sptr := "*string"
+	sptr2 := ""
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr
+f,1,baz,,        *string
+e,3,b,,                            `)
+
+	var samples []Sample
+	if err := UnmarshalDecoderToCallback(&trimDecoder{LazyCSVReader(b)}, func(s Sample) {
+		samples = append(samples, s)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr}
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+
+	expected = Sample{Foo: "e", Bar: 3, Baz: "b", Blah: &blah, SPtr: &sptr2}
+	if !reflect.DeepEqual(expected, samples[1]) {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 }

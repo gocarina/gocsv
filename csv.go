@@ -137,23 +137,28 @@ func MarshalCSV(in interface{}, out *csv.Writer) (err error) {
 // Unmarshal functions
 
 // UnmarshalFile parses the CSV from the file in the interface.
-func UnmarshalFile(in *os.File, out interface{}) (err error) {
+func UnmarshalFile(in *os.File, out interface{}) error {
 	return Unmarshal(in, out)
 }
 
 // UnmarshalString parses the CSV from the string in the interface.
-func UnmarshalString(in string, out interface{}) (err error) {
+func UnmarshalString(in string, out interface{}) error {
 	return Unmarshal(strings.NewReader(in), out)
 }
 
 // UnmarshalBytes parses the CSV from the bytes in the interface.
-func UnmarshalBytes(in []byte, out interface{}) (err error) {
+func UnmarshalBytes(in []byte, out interface{}) error {
 	return Unmarshal(bytes.NewReader(in), out)
 }
 
 // Unmarshal parses the CSV from the reader in the interface.
-func Unmarshal(in io.Reader, out interface{}) (err error) {
+func Unmarshal(in io.Reader, out interface{}) error {
 	return readTo(newDecoder(in), out)
+}
+
+// UnmarshalDecoder parses the CSV from the decoder in the interface
+func UnmarshalDecoder(in Decoder, out interface{}) error {
+	return readTo(in, out)
 }
 
 // UnmarshalCSV parses the CSV from the reader in the interface.
@@ -168,6 +173,15 @@ func UnmarshalToChan(in io.Reader, c interface{}) error {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
 	return readEach(newDecoder(in), c)
+}
+
+// UnmarshalDecoderToChan parses the CSV from the decoder and send each value in the chan c.
+// The channel must have a concrete type.
+func UnmarshalDecoderToChan(in SimpleDecoder, c interface{}) error {
+	if c == nil {
+		return fmt.Errorf("goscv: channel is %v", c)
+	}
+	return readEach(in, c)
 }
 
 // UnmarshalStringToChan parses the CSV from the string and send each value in the chan c.
@@ -194,6 +208,34 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
 	go func() {
 		cerr <- UnmarshalToChan(in, c.Interface())
+	}()
+	for {
+		select {
+		case err := <-cerr:
+			return err
+		default:
+		}
+		v, notClosed := c.Recv()
+		if !notClosed || v.Interface() == nil {
+			break
+		}
+		valueFunc.Call([]reflect.Value{v})
+	}
+	return nil
+}
+
+// UnmarshalDecoderToCallback parses the CSV from the decoder and send each value to the given func f.
+// The func must look like func(Struct).
+func UnmarshalDecoderToCallback(in SimpleDecoder, f interface{}) error {
+	valueFunc := reflect.ValueOf(f)
+	t := reflect.TypeOf(f)
+	if t.NumIn() != 1 {
+		return fmt.Errorf("the given function must have exactly one parameter")
+	}
+	cerr := make(chan error)
+	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
+	go func() {
+		cerr <- UnmarshalDecoderToChan(in, c.Interface())
 	}()
 	for {
 		select {

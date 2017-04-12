@@ -234,7 +234,7 @@ func TestCustomTagSeparatorMarshal(t *testing.T) {
 
 	TagSeparator = " | "
 	// Switch back to default TagSeparator after this
-	defer func () {
+	defer func() {
 		TagSeparator = ","
 	}()
 
