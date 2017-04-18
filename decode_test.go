@@ -470,6 +470,47 @@ e`)
 	}
 }
 
+func TestCSVToMaps(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,Baz
+4,Jose,42
+2,Daniel,21
+5,Vincent,84`)
+	m, err := CSVToMaps(bytes.NewReader(b.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstRecord := m[0]
+	if firstRecord["foo"] != "4" {
+		t.Fatal("Expected 4 got", firstRecord["foo"])
+	}
+	if firstRecord["BAR"] != "Jose" {
+		t.Fatal("Expected Jose got", firstRecord["BAR"])
+	}
+	if firstRecord["Baz"] != "42" {
+		t.Fatal("Expected 42 got", firstRecord["Baz"])
+	}
+	secondRecord := m[1]
+	if secondRecord["foo"] != "2" {
+		t.Fatal("Expected 2 got", secondRecord["foo"])
+	}
+	if secondRecord["BAR"] != "Daniel" {
+		t.Fatal("Expected Daniel got", secondRecord["BAR"])
+	}
+	if secondRecord["Baz"] != "21" {
+		t.Fatal("Expected 21 got", secondRecord["Baz"])
+	}
+	thirdRecord := m[2]
+	if thirdRecord["foo"] != "5" {
+		t.Fatal("Expected 5 got", thirdRecord["foo"])
+	}
+	if thirdRecord["BAR"] != "Vincent" {
+		t.Fatal("Expected Vincent got", thirdRecord["BAR"])
+	}
+	if thirdRecord["Baz"] != "84" {
+		t.Fatal("Expected 84 got", thirdRecord["Baz"])
+	}
+}
+
 type trimDecoder struct {
 	csvReader *csv.Reader
 }

@@ -264,6 +264,7 @@ func UnmarshalStringToCallback(in string, c interface{}) (err error) {
 	return UnmarshalToCallback(strings.NewReader(in), c)
 }
 
+// CSVToMap creates a simple map from a CSV of 2 columns.
 func CSVToMap(in io.Reader) (map[string]string, error) {
 	decoder := newDecoder(in)
 	header, err := decoder.getCSVRow()
@@ -284,4 +285,30 @@ func CSVToMap(in io.Reader) (map[string]string, error) {
 		m[line[0]] = line[1]
 	}
 	return m, nil
+}
+
+// CSVToMaps takes a reader and returns an array of dictionaries, using the header row as the keys
+func CSVToMaps(reader io.Reader) ([]map[string]string, error) {
+	r := csv.NewReader(reader)
+	rows := []map[string]string{}
+	var header []string
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if header == nil {
+			header = record
+		} else {
+			dict := map[string]string{}
+			for i := range header {
+				dict[header[i]] = record[i]
+			}
+			rows = append(rows, dict)
+		}
+	}
+	return rows, nil
 }
