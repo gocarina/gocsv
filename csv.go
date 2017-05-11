@@ -64,12 +64,12 @@ func getCSVWriter(out io.Writer) *csv.Writer {
 var selfCSVReader = DefaultCSVReader
 
 // DefaultCSVReader is the default CSV reader used to parse CSV (cf. csv.NewReader)
-func DefaultCSVReader(in io.Reader) *csv.Reader {
+func DefaultCSVReader(in io.Reader) CSVReader {
 	return csv.NewReader(in)
 }
 
 // LazyCSVReader returns a lazy CSV reader, with LazyQuotes and TrimLeadingSpace.
-func LazyCSVReader(in io.Reader) *csv.Reader {
+func LazyCSVReader(in io.Reader) CSVReader {
 	csvReader := csv.NewReader(in)
 	csvReader.LazyQuotes = true
 	csvReader.TrimLeadingSpace = true
@@ -77,11 +77,11 @@ func LazyCSVReader(in io.Reader) *csv.Reader {
 }
 
 // SetCSVReader sets the CSV reader used to parse CSV.
-func SetCSVReader(csvReader func(io.Reader) *csv.Reader) {
+func SetCSVReader(csvReader func(io.Reader) CSVReader) {
 	selfCSVReader = csvReader
 }
 
-func getCSVReader(in io.Reader) *csv.Reader {
+func getCSVReader(in io.Reader) CSVReader {
 	return selfCSVReader(in)
 }
 
