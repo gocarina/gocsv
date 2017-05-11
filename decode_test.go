@@ -326,7 +326,7 @@ func TestRenamedTypesUnmarshal(t *testing.T) {
 	var samples []RenamedSample
 
 	// Set different csv field separator to enable comma in floats
-	SetCSVReader(func(in io.Reader) *csv.Reader {
+	SetCSVReader(func(in io.Reader) CSVReader {
 		csvin := csv.NewReader(in)
 		csvin.Comma = ';'
 		return csvin
@@ -512,7 +512,7 @@ func TestCSVToMaps(t *testing.T) {
 }
 
 type trimDecoder struct {
-	csvReader *csv.Reader
+	csvReader CSVReader
 }
 
 func (c *trimDecoder) getCSVRow() ([]string, error) {
