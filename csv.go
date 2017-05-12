@@ -93,6 +93,11 @@ func MarshalFile(in interface{}, file *os.File) (err error) {
 	return Marshal(in, file)
 }
 
+// JWL added to avoid duplicate headers
+func MarshalFileWithoutHeaders(in interface{}, file *os.File) (err error) {
+	return MarshalWithoutHeaders(in, file)
+}
+
 // MarshalString returns the CSV string from the interface.
 func MarshalString(in interface{}) (out string, err error) {
 	bufferString := bytes.NewBufferString(out)
