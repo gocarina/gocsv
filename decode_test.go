@@ -523,3 +523,37 @@ e`)
 		t.Fatal("Something went wrong")
 	}
 }
+
+func Test_ZeroPrefixedIntegerUnmarshal(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+	b := bytes.NewBufferString(`foo,BAR
+a,006`)
+	d := &decoder{in: b}
+
+	var samples []Sample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instance, got %d", len(samples))
+	}
+	if samples[0].Bar != 6 {
+		t.Fatal("expected Bar=6 got Bar=%d", samples[0].Bar)
+	}
+
+	b = bytes.NewBufferString(`foo,BAR
+a,08`)
+	d = &decoder{in: b}
+
+	samples = []Sample{}
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instance, got %d", len(samples))
+	}
+	if samples[0].Bar != 8 {
+		t.Fatal("expected Bar=8 got Bar=%d", samples[0].Bar)
+	}
+}

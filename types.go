@@ -130,7 +130,7 @@ func toInt(in interface{}) (int64, error) {
 		if s == "" {
 			return 0, nil
 		}
-		return strconv.ParseInt(s, 0, 64)
+		return strconv.ParseInt(s, 10, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
