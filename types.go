@@ -414,11 +414,11 @@ func marshall(field reflect.Value) (value string, err error) {
 	marshallIt := func(finalField reflect.Value) (string, error) {
 		if finalField.CanInterface() && finalField.Type().Implements(marshallerType) { // Use TypeMarshaller when possible
 			return finalField.Interface().(TypeMarshaller).MarshalCSV()
-		} else if finalField.CanInterface() && finalField.Type().Implements(stringerType) { // Otherwise try to use Stringer
-			return finalField.Interface().(Stringer).String(), nil
 		} else if finalField.CanInterface() && finalField.Type().Implements(textMarshalerType) { // Otherwise try to use TextMarshaller
 			text, err := finalField.Interface().(encoding.TextMarshaler).MarshalText()
 			return string(text), err
+		} else if finalField.CanInterface() && finalField.Type().Implements(stringerType) { // Otherwise try to use Stringer
+			return finalField.Interface().(Stringer).String(), nil
 		}
 
 		return value, NoMarshalFuncError{"No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implement TypeMarshaller nor Stringer"}
