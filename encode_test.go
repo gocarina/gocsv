@@ -68,7 +68,7 @@ func Test_writeTo_Time(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ft != d {
+	if ft.Sub(d) != 0 {
 		t.Fatalf("Dates doesn't match: %s and actual: %s", d, d)
 	}
 
