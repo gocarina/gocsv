@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func Test_readTo(t *testing.T) {
@@ -58,6 +59,25 @@ e,BAD_INPUT,b`)
 		t.Fatalf("incorrect error type: %T", err)
 	}
 
+}
+
+func Test_readTo_Time(t *testing.T) {
+	b := bytes.NewBufferString(`Foo
+1970-01-01T03:01:00+03:00`)
+	d := &decoder{in: b}
+
+	var samples []DateTime
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+
+	rt, _ := time.Parse(time.RFC3339, "1970-01-01T03:01:00+03:00")
+
+	expected := DateTime{Foo: rt}
+
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
 }
 
 func Test_readTo_complex_embed(t *testing.T) {

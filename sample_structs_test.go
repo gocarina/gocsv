@@ -1,5 +1,7 @@
 package gocsv
 
+import "time"
+
 type Sample struct {
 	Foo  string  `csv:"foo"`
 	Bar  int     `csv:"BAR"`
@@ -40,4 +42,8 @@ type MultiTagSample struct {
 type TagSeparatorSample struct {
 	Foo string `csv:"Baz|foo"`
 	Bar int    `csv:"BAR"`
+}
+
+type DateTime struct {
+	Foo time.Time `csv:"Foo"`
 }
