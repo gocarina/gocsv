@@ -124,9 +124,17 @@ Customizable CSV Reader / Writer
 ```go
 
 func main() {
-	...
+    ...
 	
-	gocsv.SetCSVReader(func(in io.Reader) *csv.Reader {
+    gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
+	r := csv.NewReader(in)
+	r.Comma = '|'
+	return r // Allows use pipe as delimiter
+    })	
+	
+    ...
+	
+    gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
     	//return csv.NewReader(in)
     	return gocsv.LazyCSVReader(in) // Allows use of quotes in CSV
     })
@@ -145,7 +153,7 @@ func main() {
 
     gocsv.MarshalFile(&clients, file)
 
-	...
+    ...
 }
 
 ```
