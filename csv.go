@@ -36,9 +36,9 @@ var TagSeparator = ","
 
 var selfCSVWriter = DefaultCSVWriter
 
-// DefaultCSVWriter is the default CSV writer used to format CSV (cf. csv.NewWriter)
-func DefaultCSVWriter(out io.Writer) *csv.Writer {
-	writer := csv.NewWriter(out)
+// DefaultCSVWriter is the default SafeCSVWriter used to format CSV (cf. csv.NewWriter)
+func DefaultCSVWriter(out io.Writer) *SafeCSVWriter {
+	writer := NewSafeCSVWriter(csv.NewWriter(out))
 
 	// As only one rune can be defined as a CSV separator, we are going to trim
 	// the custom tag separator and use the first rune.
@@ -49,12 +49,12 @@ func DefaultCSVWriter(out io.Writer) *csv.Writer {
 	return writer
 }
 
-// SetCSVWriter sets the CSV writer used to format CSV.
-func SetCSVWriter(csvWriter func(io.Writer) *csv.Writer) {
+// SetCSVWriter sets the SafeCSVWriter used to format CSV.
+func SetCSVWriter(csvWriter func(io.Writer) *SafeCSVWriter) {
 	selfCSVWriter = csvWriter
 }
 
-func getCSVWriter(out io.Writer) *csv.Writer {
+func getCSVWriter(out io.Writer) *SafeCSVWriter {
 	return selfCSVWriter(out)
 }
 
@@ -124,17 +124,17 @@ func MarshalWithoutHeaders(in interface{}, out io.Writer) (err error) {
 }
 
 // MarshalChan returns the CSV read from the channel.
-func MarshalChan(c <-chan interface{}, out *csv.Writer) error {
+func MarshalChan(c <-chan interface{}, out *SafeCSVWriter) error {
 	return writeFromChan(out, c)
 }
 
 // MarshalCSV returns the CSV in writer from the interface.
-func MarshalCSV(in interface{}, out *csv.Writer) (err error) {
+func MarshalCSV(in interface{}, out *SafeCSVWriter) (err error) {
 	return writeTo(out, in, false)
 }
 
 // MarshalCSVWithoutHeaders returns the CSV in writer from the interface.
-func MarshalCSVWithoutHeaders(in interface{}, out *csv.Writer) (err error) {
+func MarshalCSVWithoutHeaders(in interface{}, out *SafeCSVWriter) (err error) {
 	return writeTo(out, in, true)
 }
 

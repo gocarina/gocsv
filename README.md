@@ -154,7 +154,7 @@ func main() {
 
         ...
 
-        gocsv.SetCSVWriter(func(out io.Writer) *csv.Writer {
+        gocsv.SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
     	    return csv.NewWriter(out)
         })
 

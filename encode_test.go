@@ -229,7 +229,7 @@ func TestRenamedTypesMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
 	}
 
-	SetCSVWriter(func(out io.Writer) *csv.Writer {
+	SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
 		csvout := csv.NewWriter(out)
 		csvout.Comma = ';'
 		return csvout
