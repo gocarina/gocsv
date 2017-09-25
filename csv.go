@@ -133,6 +133,11 @@ func MarshalCSV(in interface{}, out *csv.Writer) (err error) {
 	return writeTo(out, in, false)
 }
 
+// MarshalCSVWithoutHeaders returns the CSV in writer from the interface.
+func MarshalCSVWithoutHeaders(in interface{}, out *csv.Writer) (err error) {
+	return writeTo(out, in, true)
+}
+
 // --------------------------------------------------------------------------
 // Unmarshal functions
 
