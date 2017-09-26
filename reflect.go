@@ -18,6 +18,7 @@ type structInfo struct {
 // that defines Key as a tag
 type fieldInfo struct {
 	keys       []string
+	omitEmpty  bool
 	IndexChain []int
 }
 
@@ -70,6 +71,8 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		for _, fieldTagEntry := range fieldTags {
 			if fieldTagEntry != "omitempty" {
 				filteredTags = append(filteredTags, fieldTagEntry)
+			} else {
+				fieldInfo.omitEmpty = true
 			}
 		}
 

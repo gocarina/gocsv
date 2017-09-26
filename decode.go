@@ -148,7 +148,7 @@ func readTo(decoder Decoder, out interface{}) error {
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
+				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
 					return &csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
 						Column: j + 1,
@@ -213,7 +213,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range line {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent); err != nil { // Set field of struct
+				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
 					return &csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
 						Column: j + 1,
@@ -287,10 +287,10 @@ func createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) refle
 	return reflect.New(outInnerType).Elem()
 }
 
-func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string) error {
+func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string, omitEmpty bool) error {
 	oi := *outInner
 	if outInnerWasPointer {
 		oi = outInner.Elem()
 	}
-	return setField(oi.FieldByIndex(index), value)
+	return setField(oi.FieldByIndex(index), value, omitEmpty)
 }

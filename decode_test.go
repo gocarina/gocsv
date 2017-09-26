@@ -15,9 +15,9 @@ func Test_readTo(t *testing.T) {
 	blah := 0
 	sptr := "*string"
 	sptr2 := ""
-	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr
-f,1,baz,,*string
-e,3,b,,`)
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr,Omit
+f,1,baz,,*string,*string
+e,3,b,,,`)
 	d := &decoder{in: b}
 
 	var samples []Sample
@@ -28,7 +28,7 @@ e,3,b,,`)
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
 	}
 
-	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr}
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr, Omit: &sptr}
 	if !reflect.DeepEqual(expected, samples[0]) {
 		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
 	}
