@@ -9,6 +9,7 @@ type Sample struct {
 	Frop float64 `csv:"Quux"`
 	Blah *int    `csv:"Blah"`
 	SPtr *string `csv:"SPtr"`
+	Omit *string `csv:"Omit,omitempty"`
 }
 
 type EmbedSample struct {
