@@ -127,25 +127,25 @@ func main() {
         ...
 	
         gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
-	    r := csv.NewReader(in)
-	    r.Comma = '|'
-	    return r // Allows use pipe as delimiter
+            r := csv.NewReader(in)
+            r.Comma = '|'
+            return r // Allows use pipe as delimiter
         })	
 	
         ...
 	
         gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
-	    r := csv.NewReader(in)
-	    r.LazyQuotes = true
-	    r.Comma = '.'
-	    return r // Allows use dot as delimiter and use quotes in CSV
-        })	
+            r := csv.NewReader(in)
+            r.LazyQuotes = true
+            r.Comma = '.'
+            return r // Allows use dot as delimiter and use quotes in CSV
+        })
 	
         ...
 	
         gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
             //return csv.NewReader(in)
-    	    return gocsv.LazyCSVReader(in) // Allows use of quotes in CSV
+            return gocsv.LazyCSVReader(in) // Allows use of quotes in CSV
         })
 
         ...
@@ -155,7 +155,9 @@ func main() {
         ...
 
         gocsv.SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
-    	    return csv.NewWriter(out)
+            writer := csv.NewWriter(out)
+            writer.Comma = '|'
+            return gocsv.NewSafeCSVWriter(writer)
         })
 
         ...
