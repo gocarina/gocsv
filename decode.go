@@ -231,11 +231,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 // Check if the outType is an array or a slice
 func ensureOutType(outType reflect.Type) error {
 	switch outType.Kind() {
-	case reflect.Slice:
-		fallthrough
-	case reflect.Chan:
-		fallthrough
-	case reflect.Array:
+	case reflect.Slice, reflect.Array:
 		return nil
 	}
 	return fmt.Errorf("cannot use " + outType.String() + ", only slice or array supported")
