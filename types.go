@@ -418,13 +418,27 @@ func unmarshall(field reflect.Value, value string) error {
 func marshall(field reflect.Value) (value string, err error) {
 	dupField := field
 	marshallIt := func(finalField reflect.Value) (string, error) {
-		if finalField.CanInterface() && finalField.Type().Implements(marshallerType) { // Use TypeMarshaller when possible
-			return finalField.Interface().(TypeMarshaller).MarshalCSV()
-		} else if finalField.CanInterface() && finalField.Type().Implements(textMarshalerType) { // Otherwise try to use TextMarshaller
-			text, err := finalField.Interface().(encoding.TextMarshaler).MarshalText()
-			return string(text), err
-		} else if finalField.CanInterface() && finalField.Type().Implements(stringerType) { // Otherwise try to use Stringer
-			return finalField.Interface().(Stringer).String(), nil
+		if finalField.CanInterface() {
+			fieldIface := finalField.Interface()
+
+			// Use TypeMarshaller when possible
+			fieldTypeMarhaller, ok := fieldIface.(TypeMarshaller)
+			if ok {
+				return fieldTypeMarhaller.MarshalCSV()
+			}
+
+			// Otherwise try to use TextMarshaller
+			fieldTextMarshaler, ok := fieldIface.(encoding.TextMarshaler)
+			if ok {
+				text, err := fieldTextMarshaler.MarshalText()
+				return string(text), err
+			}
+
+			// Otherwise try to use Stringer
+			fieldStringer, ok := fieldIface.(Stringer)
+			if ok {
+				return fieldStringer.String(), nil
+			}
 		}
 
 		return value, NoMarshalFuncError{"No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implement TypeMarshaller nor Stringer"}
