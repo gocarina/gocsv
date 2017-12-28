@@ -384,16 +384,19 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 func unmarshall(field reflect.Value, value string) error {
 	dupField := field
 	unMarshallIt := func(finalField reflect.Value) error {
-		if finalField.CanInterface() && finalField.Type().Implements(unMarshallerType) {
-			if err := finalField.Interface().(TypeUnmarshaller).UnmarshalCSV(value); err != nil {
-				return err
+		if finalField.CanInterface() {
+			fieldIface := finalField.Interface()
+
+			fieldTypeUnmarshaller, ok := fieldIface.(TypeUnmarshaller)
+			if ok {
+				return fieldTypeUnmarshaller.UnmarshalCSV(value)
 			}
-			return nil
-		} else if finalField.CanInterface() && finalField.Type().Implements(textUnMarshalerType) { // Otherwise try to use TextMarshaller
-			if err := finalField.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(value)); err != nil {
-				return err
+
+			// Otherwise try to use TextUnmarshaler
+			fieldTextUnmarshaler, ok := fieldIface.(encoding.TextUnmarshaler)
+			if ok {
+				return fieldTextUnmarshaler.UnmarshalText([]byte(value))
 			}
-			return nil
 		}
 
 		return NoUnmarshalFuncError{"No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implement TypeUnmarshaller"}
