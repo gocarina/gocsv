@@ -55,9 +55,10 @@ func (c csvDecoder) getCSVRow() ([]string, error) {
 	return c.Read()
 }
 
-func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
+func mismatchStructFields(structInfo []fieldInfo, headers []string) []string {
+	missing := make([]string, 0)
 	if len(structInfo) == 0 {
-		return nil
+		return missing
 	}
 
 	headerMap := make(map[string]struct{}, len(headers))
@@ -74,8 +75,37 @@ func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 			}
 		}
 		if !found {
-			return fmt.Errorf("found unmatched struct field with tags %v", info.keys)
+			missing = append(missing, info.keys...)
 		}
+	}
+	return missing
+}
+
+func mismatchHeaderFields(structInfo []fieldInfo, headers []string) []string {
+	missing := make([]string, 0)
+	if len(headers) == 0 {
+		return missing
+	}
+
+	keyMap := make(map[string]struct{}, 0)
+	for _, info := range structInfo {
+		for _, key := range info.keys {
+			keyMap[key] = struct{}{}
+		}
+	}
+
+	for _, header := range headers {
+		if _, ok := keyMap[header]; !ok {
+			missing = append(missing, header)
+		}
+	}
+	return missing
+}
+
+func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
+	missing := mismatchStructFields(structInfo, headers)
+	if len(missing) != 0 {
+		return fmt.Errorf("found unmatched struct field with tags %v", missing)
 	}
 	return nil
 }
