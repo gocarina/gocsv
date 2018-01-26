@@ -205,8 +205,11 @@ func toFloat(in interface{}) (float64, error) {
 	return 0, fmt.Errorf("No known conversion from " + inValue.Type().String() + " to float")
 }
 
-func setField(field reflect.Value, value string) error {
+func setField(field reflect.Value, value string, omitEmpty bool) error {
 	if field.Kind() == reflect.Ptr {
+		if omitEmpty && value == "" {
+			return nil
+		}
 		if field.IsNil() {
 			field.Set(reflect.New(field.Type().Elem()))
 		}
@@ -424,17 +427,17 @@ func marshall(field reflect.Value) (value string, err error) {
 				return fieldTypeMarhaller.MarshalCSV()
 			}
 
-			// Otherwise try to use Stringer
-			fieldStringer, ok := fieldIface.(Stringer)
-			if ok {
-				return fieldStringer.String(), nil
-			}
-
 			// Otherwise try to use TextMarshaller
 			fieldTextMarshaler, ok := fieldIface.(encoding.TextMarshaler)
 			if ok {
 				text, err := fieldTextMarshaler.MarshalText()
 				return string(text), err
+			}
+
+			// Otherwise try to use Stringer
+			fieldStringer, ok := fieldIface.(Stringer)
+			if ok {
+				return fieldStringer.String(), nil
 			}
 		}
 

@@ -41,9 +41,9 @@ import (
 )
 
 type Client struct { // Our example struct, you can use "-" to ignore a field
-	Id      string `csv:"id"`
-	Name    string `csv:"name"`
-	Age     string `csv:"age"`
+	Id      string `csv:"client_id"`
+	Name    string `csv:"client_name"`
+	Age     string `csv:"client_age"`
 	NotUsed string `csv:"-"`
 }
 
@@ -124,28 +124,47 @@ Customizable CSV Reader / Writer
 ```go
 
 func main() {
-	...
+        ...
 	
-	gocsv.SetCSVReader(func(in io.Reader) *csv.Reader {
-    	//return csv.NewReader(in)
-    	return gocsv.LazyCSVReader(in) // Allows use of quotes in CSV
-    })
+        gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
+            r := csv.NewReader(in)
+            r.Comma = '|'
+            return r // Allows use pipe as delimiter
+        })	
+	
+        ...
+	
+        gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
+            r := csv.NewReader(in)
+            r.LazyQuotes = true
+            r.Comma = '.'
+            return r // Allows use dot as delimiter and use quotes in CSV
+        })
+	
+        ...
+	
+        gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
+            //return csv.NewReader(in)
+            return gocsv.LazyCSVReader(in) // Allows use of quotes in CSV
+        })
 
-    ...
+        ...
 
-    gocsv.UnmarshalFile(file, &clients)
+        gocsv.UnmarshalFile(file, &clients)
 
-    ...
+        ...
 
-    gocsv.SetCSVWriter(func(out io.Writer) *csv.Writer {
-    	return csv.NewWriter(out)
-    })
+        gocsv.SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
+            writer := csv.NewWriter(out)
+            writer.Comma = '|'
+            return gocsv.NewSafeCSVWriter(writer)
+        })
 
-    ...
+        ...
 
-    gocsv.MarshalFile(&clients, file)
+        gocsv.MarshalFile(&clients, file)
 
-	...
+        ...
 }
 
 ```
