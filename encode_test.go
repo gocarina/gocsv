@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func assertLine(t *testing.T, expected, actual []string) {
@@ -30,7 +31,7 @@ func Test_writeTo(t *testing.T) {
 		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s, false); err != nil {
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -41,9 +42,38 @@ func Test_writeTo(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("expected 3 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr"}, lines[0])
-	assertLine(t, []string{"f", "1", "baz", "0.1", "2", "*string"}, lines[1])
-	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", ""}, lines[2])
+	assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
+	assertLine(t, []string{"f", "1", "baz", "0.1", "2", "*string", ""}, lines[1])
+	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", "", ""}, lines[2])
+}
+
+func Test_writeTo_Time(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	d := time.Unix(60, 0)
+	s := []DateTime{
+		{Foo: d},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, true); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ft := time.Now()
+	ft.UnmarshalText([]byte(lines[0][0]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ft.Sub(d) != 0 {
+		t.Fatalf("Dates doesn't match: %s and actual: %s", d, d)
+	}
+
+	m, _ := d.MarshalText()
+	assertLine(t, []string{string(m)}, lines[0])
 }
 
 func Test_writeTo_NoHeaders(t *testing.T) {
@@ -55,7 +85,7 @@ func Test_writeTo_NoHeaders(t *testing.T) {
 		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s, true); err != nil {
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -66,8 +96,8 @@ func Test_writeTo_NoHeaders(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"f", "1", "baz", "0.1", "2", "*string"}, lines[0])
-	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", ""}, lines[1])
+	assertLine(t, []string{"f", "1", "baz", "0.1", "2", "*string", ""}, lines[0])
+	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", "", ""}, lines[1])
 }
 
 func Test_writeTo_multipleTags(t *testing.T) {
@@ -77,7 +107,7 @@ func Test_writeTo_multipleTags(t *testing.T) {
 		{Foo: "abc", Bar: 123},
 		{Foo: "def", Bar: 234},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s, false); err != nil {
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,7 +138,7 @@ func Test_writeTo_embed(t *testing.T) {
 			Grault: math.Pi,
 		},
 	}
-	if err := writeTo(csv.NewWriter(e.out), s, false); err != nil {
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,8 +149,8 @@ func Test_writeTo_embed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "garply", "last"}, lines[0])
-	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "2", "*string", "3.141592653589793", "zzz"}, lines[1])
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last"}, lines[0])
+	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "2", "*string", "", "3.141592653589793", "zzz"}, lines[1])
 }
 
 func Test_writeTo_complex_embed(t *testing.T) {
@@ -147,7 +177,7 @@ func Test_writeTo_complex_embed(t *testing.T) {
 			Corge:      "hhh",
 		},
 	}
-	if err := writeTo(csv.NewWriter(e.out), sfs, false); err != nil {
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), sfs, false); err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
@@ -157,8 +187,8 @@ func Test_writeTo_complex_embed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "garply", "last", "abc"}, lines[0])
-	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "", "*string", "0.1", "fff", "hhh"}, lines[1])
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last", "abc"}, lines[0])
+	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "", "*string", "", "0.1", "fff", "hhh"}, lines[1])
 }
 
 func Test_writeToChan(t *testing.T) {
@@ -173,7 +203,7 @@ func Test_writeToChan(t *testing.T) {
 		}
 		close(c)
 	}()
-	if err := MarshalChan(c, csv.NewWriter(e.out)); err != nil {
+	if err := MarshalChan(c, NewSafeCSVWriter(csv.NewWriter(e.out))); err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
@@ -185,10 +215,10 @@ func Test_writeToChan(t *testing.T) {
 	}
 	for i, l := range lines {
 		if i == 0 {
-			assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr"}, l)
+			assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, l)
 			continue
 		}
-		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string"}, l)
+		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string", ""}, l)
 	}
 }
 
@@ -199,8 +229,8 @@ func TestRenamedTypesMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
 	}
 
-	SetCSVWriter(func(out io.Writer) *csv.Writer {
-		csvout := csv.NewWriter(out)
+	SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
+		csvout := NewSafeCSVWriter(csv.NewWriter(out))
 		csvout.Comma = ';'
 		return csvout
 	})
@@ -234,7 +264,7 @@ func TestCustomTagSeparatorMarshal(t *testing.T) {
 
 	TagSeparator = " | "
 	// Switch back to default TagSeparator after this
-	defer func () {
+	defer func() {
 		TagSeparator = ","
 	}()
 
