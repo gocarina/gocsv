@@ -13,12 +13,11 @@ type structInfo struct {
 	Fields []fieldInfo
 }
 
-// fieldInfo is a struct field that should be mapped to a CSV column, or vice-versa
+// fieldInfo is a struct field that should be mapped to a CSV column, or vica-versa
 // Each IndexChain element before the last is the index of an the embedded struct field
 // that defines Key as a tag
 type fieldInfo struct {
 	keys       []string
-	omitEmpty  bool
 	IndexChain []int
 }
 
@@ -28,7 +27,7 @@ func (f fieldInfo) getFirstKey() string {
 
 func (f fieldInfo) matchesKey(key string) bool {
 	for _, k := range f.keys {
-		if key == k || strings.TrimSpace(key) == k {
+		if key == k {
 			return true
 		}
 	}
@@ -71,8 +70,6 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		for _, fieldTagEntry := range fieldTags {
 			if fieldTagEntry != "omitempty" {
 				filteredTags = append(filteredTags, fieldTagEntry)
-			} else {
-				fieldInfo.omitEmpty = true
 			}
 		}
 

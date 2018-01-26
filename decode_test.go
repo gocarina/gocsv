@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
 func resetFailIfUnmatchedStructTags(b bool) {
@@ -22,9 +21,9 @@ func Test_readTo(t *testing.T) {
 	blah := 0
 	sptr := "*string"
 	sptr2 := ""
-	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr,Omit
-f,1,baz,,*string,*string
-e,3,b,,,`)
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr
+f,1,baz,,*string
+e,3,b,,`)
 	d := &decoder{in: b}
 
 	var samples []Sample
@@ -35,7 +34,7 @@ e,3,b,,,`)
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
 	}
 
-	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr, Omit: &sptr}
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr}
 	if !reflect.DeepEqual(expected, samples[0]) {
 		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
 	}
@@ -87,25 +86,6 @@ def,234`)
 	expected = MultiTagSample{Foo: "def", Bar: 234}
 	if expected != samples[1] {
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
-	}
-}
-
-func Test_readTo_Time(t *testing.T) {
-	b := bytes.NewBufferString(`Foo
-1970-01-01T03:01:00+03:00`)
-	d := &decoder{in: b}
-
-	var samples []DateTime
-	if err := readTo(d, &samples); err != nil {
-		t.Fatal(err)
-	}
-
-	rt, _ := time.Parse(time.RFC3339, "1970-01-01T03:01:00+03:00")
-
-	expected := DateTime{Foo: rt}
-
-	if !reflect.DeepEqual(expected, samples[0]) {
-		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
 	}
 }
 
@@ -402,7 +382,7 @@ func TestRenamedTypesUnmarshal(t *testing.T) {
 	var samples []RenamedSample
 
 	// Set different csv field separator to enable comma in floats
-	SetCSVReader(func(in io.Reader) CSVReader {
+	SetCSVReader(func(in io.Reader) *csv.Reader {
 		csvin := csv.NewReader(in)
 		csvin.Comma = ';'
 		return csvin
@@ -499,9 +479,7 @@ e,3,b`)
 
 	defaultTagSeparator := TagSeparator
 	TagSeparator = "|"
-	defer func() {
-		TagSeparator = defaultTagSeparator
-	}()
+	defer func() { TagSeparator = defaultTagSeparator }()
 
 	var samples []TagSeparatorSample
 	if err := readTo(d, &samples); err != nil {
@@ -577,91 +555,5 @@ a,08`)
 	}
 	if samples[0].Bar != 8 {
 		t.Fatal("expected Bar=8 got Bar=%d", samples[0].Bar)
-	}
-}
-
-func TestCSVToMaps(t *testing.T) {
-	b := bytes.NewBufferString(`foo,BAR,Baz
-4,Jose,42
-2,Daniel,21
-5,Vincent,84`)
-	m, err := CSVToMaps(bytes.NewReader(b.Bytes()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	firstRecord := m[0]
-	if firstRecord["foo"] != "4" {
-		t.Fatal("Expected 4 got", firstRecord["foo"])
-	}
-	if firstRecord["BAR"] != "Jose" {
-		t.Fatal("Expected Jose got", firstRecord["BAR"])
-	}
-	if firstRecord["Baz"] != "42" {
-		t.Fatal("Expected 42 got", firstRecord["Baz"])
-	}
-	secondRecord := m[1]
-	if secondRecord["foo"] != "2" {
-		t.Fatal("Expected 2 got", secondRecord["foo"])
-	}
-	if secondRecord["BAR"] != "Daniel" {
-		t.Fatal("Expected Daniel got", secondRecord["BAR"])
-	}
-	if secondRecord["Baz"] != "21" {
-		t.Fatal("Expected 21 got", secondRecord["Baz"])
-	}
-	thirdRecord := m[2]
-	if thirdRecord["foo"] != "5" {
-		t.Fatal("Expected 5 got", thirdRecord["foo"])
-	}
-	if thirdRecord["BAR"] != "Vincent" {
-		t.Fatal("Expected Vincent got", thirdRecord["BAR"])
-	}
-	if thirdRecord["Baz"] != "84" {
-		t.Fatal("Expected 84 got", thirdRecord["Baz"])
-	}
-}
-
-type trimDecoder struct {
-	csvReader CSVReader
-}
-
-func (c *trimDecoder) getCSVRow() ([]string, error) {
-	recoder, err := c.csvReader.Read()
-	for i, r := range recoder {
-		recoder[i] = strings.TrimRight(r, " ")
-	}
-	return recoder, err
-}
-
-func TestUnmarshalToDecoder(t *testing.T) {
-	// Test from upstream, requires upstream default config
-	FailIfUnmatchedStructTags = false
-	defer func() { FailIfUnmatchedStructTags = true }()
-
-	blah := 0
-	sptr := "*string"
-	sptr2 := ""
-	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr
-f,1,baz,,        *string
-e,3,b,,                            `)
-
-	var samples []Sample
-	if err := UnmarshalDecoderToCallback(&trimDecoder{LazyCSVReader(b)}, func(s Sample) {
-		samples = append(samples, s)
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if len(samples) != 2 {
-		t.Fatalf("expected 2 sample instances, got %d", len(samples))
-	}
-
-	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr}
-	if !reflect.DeepEqual(expected, samples[0]) {
-		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
-	}
-
-	expected = Sample{Foo: "e", Bar: 3, Baz: "b", Blah: &blah, SPtr: &sptr2}
-	if !reflect.DeepEqual(expected, samples[1]) {
-		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 }
