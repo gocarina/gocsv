@@ -571,3 +571,20 @@ e,3,b,,                            `)
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 }
+
+func TestUnmarshalWithoutHeader(t *testing.T) {
+	b := bytes.NewBufferString(`John,44
+		Foo,3`)
+	d := &decoder{in: b}
+
+	defaultTagSeparator := TagSeparator
+	TagSeparator = "|"
+	defer func() {
+		TagSeparator = defaultTagSeparator
+	}()
+
+	var samples []TagSeparatorSample
+	if err := readToWithoutHeaders(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+}
