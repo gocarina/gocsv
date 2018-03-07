@@ -258,6 +258,48 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	return nil
 }
 
+func readToWithoutHeaders(decoder Decoder, out interface{}) error {
+	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
+	if err := ensureOutType(outType); err != nil {
+		return err
+	}
+	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
+	if err := ensureOutInnerType(outInnerType); err != nil {
+		return err
+	}
+	csvRows, err := decoder.getCSVRows() // Get the CSV csvRows
+	if err != nil {
+		return err
+	}
+	if len(csvRows) == 0 {
+		return errors.New("empty csv file given")
+	}
+	if err := ensureOutCapacity(&outValue, len(csvRows)+1); err != nil { // Ensure the container is big enough to hold the CSV content
+		return err
+	}
+	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if len(outInnerStructInfo.Fields) == 0 {
+		return errors.New("no csv struct tags found")
+	}
+
+	for i, csvRow := range csvRows {
+		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		for j, csvColumnContent := range csvRow {
+			fieldInfo := outInnerStructInfo.Fields[j]
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+				return &csv.ParseError{
+					Line:   i + 1,
+					Column: j + 1,
+					Err:    err,
+				}
+			}
+		}
+		outValue.Index(i).Set(outInner)
+	}
+
+	return nil
+}
+
 // Check if the outType is an array or a slice
 func ensureOutType(outType reflect.Type) error {
 	switch outType.Kind() {
