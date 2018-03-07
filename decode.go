@@ -285,9 +285,10 @@ func readToWithoutHeaders(decoder Decoder, out interface{}) error {
 	for i, csvRow := range csvRows {
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range csvRow {
-			if err := setInnerField(&outInner, outInnerWasPointer, []int{j}, csvColumnContent, false); err != nil { // Set field of struct
+			fieldInfo := outInnerStructInfo.Fields[j]
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
 				return &csv.ParseError{
-					Line:   i + 1, //add 2 to account for the header & 0-indexing of arrays
+					Line:   i + 1,
 					Column: j + 1,
 					Err:    err,
 				}
