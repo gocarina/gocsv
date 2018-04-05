@@ -11,7 +11,14 @@ import (
 	"time"
 )
 
+func resetFailIfUnmatchedStructTags(b bool) {
+	FailIfUnmatchedStructTags = b
+}
+
 func Test_readTo(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+
 	blah := 0
 	sptr := "*string"
 	sptr2 := ""
@@ -58,7 +65,29 @@ e,BAD_INPUT,b`)
 	default:
 		t.Fatalf("incorrect error type: %T", err)
 	}
+}
 
+func Test_readTo_multipleTags(t *testing.T) {
+	b := bytes.NewBufferString(`Baz,BAR
+abc,123
+def,234`)
+	d := &decoder{in: b}
+
+	var samples []MultiTagSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := MultiTagSample{Foo: "abc", Bar: 123}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = MultiTagSample{Foo: "def", Bar: 234}
+	if expected != samples[1] {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
+	}
 }
 
 func Test_readTo_Time(t *testing.T) {
@@ -81,6 +110,9 @@ func Test_readTo_Time(t *testing.T) {
 }
 
 func Test_readTo_complex_embed(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
@@ -126,6 +158,9 @@ ff,gg,22,hh,ii,jj`)
 }
 
 func Test_readEach(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
@@ -182,6 +217,9 @@ func Test_maybeMissingStructFields(t *testing.T) {
 		{keys: []string{"bar"}},
 		{keys: []string{"baz"}},
 	}
+	optionalStructTags := []fieldInfo{
+		{keys: []string{"ham"}, omitEmpty: true},
+	}
 	badHeaders := []string{"hi", "mom", "bacon"}
 	goodHeaders := []string{"foo", "bar", "baz"}
 
@@ -200,21 +238,49 @@ func Test_maybeMissingStructFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// good headers, with one omitempty, expect no error
+	if err := maybeMissingStructFields(append(structTags, optionalStructTags...), goodHeaders); err != nil {
+		t.Fatal(err)
+	}
+
 	// extra headers, but all structtags match; expect no error
 	moarHeaders := append(goodHeaders, "qux", "quux", "corge", "grault")
 	if err := maybeMissingStructFields(structTags, moarHeaders); err != nil {
 		t.Fatal(err)
 	}
 
+	// good headers, with one omitempty, expect no error
+	if err := maybeMissingStructFields(append(structTags, optionalStructTags...), append(goodHeaders, "ham")); err != nil {
+		t.Fatal(err)
+	}
+
 	// not all structTags match, but there's plenty o' headers; expect
 	// error
 	mismatchedHeaders := []string{"foo", "qux", "quux", "corgi"}
-	if err := maybeMissingStructFields(structTags, mismatchedHeaders); err == nil {
+	err := maybeMissingStructFields(structTags, mismatchedHeaders)
+	if err == nil {
 		t.Fatal("expected an error, but no error found")
+	}
+	switch e := err.(type) {
+	case MissingColumnsError:
+		if len(e.MissingColumnNames) != 2 {
+			t.Fatal("expected two missing columns")
+		}
+		if e.MissingColumnNames[0] != "bar" {
+			t.Fatal("expected missing bar")
+		}
+		if e.MissingColumnNames[1] != "baz" {
+			t.Fatal("expected missing baz")
+		}
+	default:
+		t.Fatal("expected a MissingColumnsError but did not get one")
 	}
 }
 
 func Test_maybeDoubleHeaderNames(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+
 	b := bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
@@ -293,6 +359,9 @@ e,3,b`)
 }
 
 func TestUnmarshalToCallback(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
@@ -490,6 +559,40 @@ e`)
 	}
 }
 
+func Test_ZeroPrefixedIntegerUnmarshal(t *testing.T) {
+	defer resetFailIfUnmatchedStructTags(FailIfUnmatchedStructTags)
+	FailIfUnmatchedStructTags = false
+	b := bytes.NewBufferString(`foo,BAR
+a,006`)
+	d := &decoder{in: b}
+
+	var samples []Sample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instance, got %d", len(samples))
+	}
+	if samples[0].Bar != 6 {
+		t.Fatalf("expected Bar=6 got Bar=%d", samples[0].Bar)
+	}
+
+	b = bytes.NewBufferString(`foo,BAR
+a,08`)
+	d = &decoder{in: b}
+
+	samples = []Sample{}
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instance, got %d", len(samples))
+	}
+	if samples[0].Bar != 8 {
+		t.Fatalf("expected Bar=8 got Bar=%d", samples[0].Bar)
+	}
+}
+
 func TestCSVToMaps(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz
 4,Jose,42
@@ -544,6 +647,10 @@ func (c *trimDecoder) getCSVRow() ([]string, error) {
 }
 
 func TestUnmarshalToDecoder(t *testing.T) {
+	// Test from upstream, requires upstream default config
+	FailIfUnmatchedStructTags = false
+	defer func() { FailIfUnmatchedStructTags = true }()
+
 	blah := 0
 	sptr := "*string"
 	sptr2 := ""

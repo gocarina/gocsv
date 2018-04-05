@@ -8,6 +8,18 @@ import (
 	"reflect"
 )
 
+var (
+	ErrEmptyCSV = errors.New("empty csv file given")
+)
+
+type MissingColumnsError struct {
+	MissingColumnNames []string
+}
+
+func (e MissingColumnsError) Error() string {
+	return fmt.Sprintf("unable to find these columns: %v", e.MissingColumnNames)
+}
+
 // Decoder .
 type Decoder interface {
 	getCSVRows() ([][]string, error)
@@ -74,7 +86,7 @@ func mismatchStructFields(structInfo []fieldInfo, headers []string) []string {
 				break
 			}
 		}
-		if !found {
+		if !found && !info.omitEmpty {
 			missing = append(missing, info.keys...)
 		}
 	}
@@ -105,7 +117,7 @@ func mismatchHeaderFields(structInfo []fieldInfo, headers []string) []string {
 func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 	missing := mismatchStructFields(structInfo, headers)
 	if len(missing) != 0 {
-		return fmt.Errorf("found unmatched struct field with tags %v", missing)
+		return MissingColumnsError{MissingColumnNames: missing}
 	}
 	return nil
 }
@@ -136,7 +148,7 @@ func readTo(decoder Decoder, out interface{}) error {
 		return err
 	}
 	if len(csvRows) == 0 {
-		return errors.New("empty csv file given")
+		return ErrEmptyCSV
 	}
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
