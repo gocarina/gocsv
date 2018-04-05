@@ -86,7 +86,7 @@ func mismatchStructFields(structInfo []fieldInfo, headers []string) []string {
 				break
 			}
 		}
-		if !found {
+		if !found && !info.omitEmpty {
 			missing = append(missing, info.keys...)
 		}
 	}

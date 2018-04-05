@@ -217,6 +217,9 @@ func Test_maybeMissingStructFields(t *testing.T) {
 		{keys: []string{"bar"}},
 		{keys: []string{"baz"}},
 	}
+	optionalStructTags := []fieldInfo{
+		{keys: []string{"ham"}, omitEmpty: true},
+	}
 	badHeaders := []string{"hi", "mom", "bacon"}
 	goodHeaders := []string{"foo", "bar", "baz"}
 
@@ -235,9 +238,19 @@ func Test_maybeMissingStructFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// good headers, with one omitempty, expect no error
+	if err := maybeMissingStructFields(append(structTags, optionalStructTags...), goodHeaders); err != nil {
+		t.Fatal(err)
+	}
+
 	// extra headers, but all structtags match; expect no error
 	moarHeaders := append(goodHeaders, "qux", "quux", "corge", "grault")
 	if err := maybeMissingStructFields(structTags, moarHeaders); err != nil {
+		t.Fatal(err)
+	}
+
+	// good headers, with one omitempty, expect no error
+	if err := maybeMissingStructFields(append(structTags, optionalStructTags...), append(goodHeaders, "ham")); err != nil {
 		t.Fatal(err)
 	}
 
