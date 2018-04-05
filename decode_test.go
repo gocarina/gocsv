@@ -561,7 +561,7 @@ a,006`)
 		t.Fatalf("expected 1 sample instance, got %d", len(samples))
 	}
 	if samples[0].Bar != 6 {
-		t.Fatal("expected Bar=6 got Bar=%d", samples[0].Bar)
+		t.Fatalf("expected Bar=6 got Bar=%d", samples[0].Bar)
 	}
 
 	b = bytes.NewBufferString(`foo,BAR
@@ -576,7 +576,7 @@ a,08`)
 		t.Fatalf("expected 1 sample instance, got %d", len(samples))
 	}
 	if samples[0].Bar != 8 {
-		t.Fatal("expected Bar=8 got Bar=%d", samples[0].Bar)
+		t.Fatalf("expected Bar=8 got Bar=%d", samples[0].Bar)
 	}
 }
 
