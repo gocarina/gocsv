@@ -59,11 +59,16 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 			continue
 		}
 		indexChain := append(parentIndexChain, i)
-		// if the field is an embedded struct, create a fieldInfo for each of its fields
-		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+		// if the field is a struct, create a fieldInfo for each of its fields
+		if field.Type.Kind() == reflect.Struct {
 			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
+		}
+
+		// if the field is an embedded struct, ignore the csv tag
+		if field.Anonymous {
 			continue
 		}
+
 		fieldInfo := fieldInfo{IndexChain: indexChain}
 		fieldTag := field.Tag.Get("csv")
 		fieldTags := strings.Split(fieldTag, TagSeparator)
