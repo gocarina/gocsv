@@ -104,10 +104,7 @@ func (date *DateTime) String() (string) {
 // Convert the CSV string as internal date
 func (date *DateTime) UnmarshalCSV(csv string) (err error) {
 	date.Time, err = time.Parse("20060201", csv)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 type Client struct { // Our example struct with a custom type (DateTime)
