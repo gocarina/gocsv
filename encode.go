@@ -1,7 +1,6 @@
 package gocsv
 
 import (
-	"encoding/csv"
 	"fmt"
 	"io"
 	"reflect"
@@ -15,9 +14,12 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
+func writeFromChan(writer *SafeCSVWriter, c <-chan interface{}) error {
 	// Get the first value. It wil determine the header structure.
-	firstValue := <-c
+	firstValue, ok := <-c
+	if !ok {
+		return fmt.Errorf("channel is closed")
+	}
 	inValue, inType := getConcreteReflectValueAndType(firstValue) // Get the concrete type
 	if err := ensureStructOrPtr(inType); err != nil {
 		return err
@@ -26,12 +28,12 @@ func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
 	inInnerStructInfo := getStructInfo(inType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
-		csvHeadersLabels[i] = fieldInfo.Key
+		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
 	if err := writer.Write(csvHeadersLabels); err != nil {
 		return err
 	}
-	write := func (val reflect.Value) error {
+	write := func(val reflect.Value) error {
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
 			inInnerFieldValue, err := getInnerField(val, inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
@@ -61,7 +63,7 @@ func writeFromChan(writer *csv.Writer, c <- chan interface{}) error {
 	return writer.Error()
 }
 
-func writeTo(writer *csv.Writer, in interface{}) error {
+func writeTo(writer *SafeCSVWriter, in interface{}, omitHeaders bool) error {
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureInType(inType); err != nil {
 		return err
@@ -73,10 +75,12 @@ func writeTo(writer *csv.Writer, in interface{}) error {
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
-		csvHeadersLabels[i] = fieldInfo.Key
+		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
-	if err := writer.Write(csvHeadersLabels); err != nil {
-		return err
+	if !omitHeaders {
+		if err := writer.Write(csvHeadersLabels); err != nil {
+			return err
+		}
 	}
 	inLen := inValue.Len()
 	for i := 0; i < inLen; i++ { // Iterate over container rows

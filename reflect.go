@@ -13,12 +13,26 @@ type structInfo struct {
 	Fields []fieldInfo
 }
 
-// fieldInfo is a struct field that should be mapped to a CSV column, or vica-versa
+// fieldInfo is a struct field that should be mapped to a CSV column, or vice-versa
 // Each IndexChain element before the last is the index of an the embedded struct field
 // that defines Key as a tag
 type fieldInfo struct {
-	Key        string
+	keys       []string
+	omitEmpty  bool
 	IndexChain []int
+}
+
+func (f fieldInfo) getFirstKey() string {
+	return f.keys[0]
+}
+
+func (f fieldInfo) matchesKey(key string) bool {
+	for _, k := range f.keys {
+		if key == k || strings.TrimSpace(key) == k {
+			return true
+		}
+	}
+	return false
 }
 
 var structMap = make(map[reflect.Type]*structInfo)
@@ -45,25 +59,34 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 			continue
 		}
 		indexChain := append(parentIndexChain, i)
-		// if the field is an embedded struct, create a fieldInfo for each of its fields
-		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+		// if the field is a struct, create a fieldInfo for each of its fields
+		if field.Type.Kind() == reflect.Struct {
 			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
+		}
+
+		// if the field is an embedded struct, ignore the csv tag
+		if field.Anonymous {
 			continue
 		}
+
 		fieldInfo := fieldInfo{IndexChain: indexChain}
 		fieldTag := field.Tag.Get("csv")
-		fieldTags := strings.Split(fieldTag, ",")
+		fieldTags := strings.Split(fieldTag, TagSeparator)
+		filteredTags := []string{}
 		for _, fieldTagEntry := range fieldTags {
 			if fieldTagEntry != "omitempty" {
-				fieldTag = fieldTagEntry
+				filteredTags = append(filteredTags, fieldTagEntry)
+			} else {
+				fieldInfo.omitEmpty = true
 			}
 		}
-		if fieldTag == "-" {
+
+		if len(filteredTags) == 1 && filteredTags[0] == "-" {
 			continue
-		} else if fieldTag != "" {
-			fieldInfo.Key = fieldTag
+		} else if len(filteredTags) > 0 && filteredTags[0] != "" {
+			fieldInfo.keys = filteredTags
 		} else {
-			fieldInfo.Key = field.Name
+			fieldInfo.keys = []string{field.Name}
 		}
 		fieldsList = append(fieldsList, fieldInfo)
 	}
