@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"encoding/json"
 )
 
 // --------------------------------------------------------------------------
@@ -285,6 +287,11 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 					return err
 				}
 				field.SetFloat(f)
+			case reflect.Slice:
+				err := json.Unmarshal([]byte(value), field.Addr().Interface())
+				if err != nil {
+					return err
+				}
 			default:
 				return err
 			}
