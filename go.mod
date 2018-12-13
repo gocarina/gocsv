@@ -1,1 +1,1 @@
-module github.com/gocarina/gocsv/v2
+module github.com/gocarina/gocsv
