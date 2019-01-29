@@ -58,7 +58,10 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		if field.PkgPath != "" {
 			continue
 		}
-		indexChain := append(parentIndexChain, i)
+
+		var cpy = make([]int, len(parentIndexChain))
+		copy(cpy, parentIndexChain)
+		indexChain := append(cpy, i)
 		// if the field is a struct, create a fieldInfo for each of its fields
 		if field.Type.Kind() == reflect.Struct {
 			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)

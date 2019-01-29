@@ -191,6 +191,45 @@ func Test_writeTo_complex_embed(t *testing.T) {
 	assertLine(t, []string{"aaa", "bbb", "111", "ddd", "12000000000000000000000", "", "*string", "", "0.1", "fff", "hhh"}, lines[1])
 }
 
+func Test_writeTo_complex_inner_struct_embed(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	sfs := []Level0Struct{
+		{
+			Level0Field: level1Struct{
+				Level1Field: level2Struct{
+					InnerStruct{
+						BoolIgnoreField0: false,
+						BoolField1:       false,
+						StringField2:     "email1",
+					},
+				},
+			},
+		},
+		{
+			Level0Field: level1Struct{
+				Level1Field: level2Struct{
+					InnerStruct{
+						BoolIgnoreField0: false,
+						BoolField1:       true,
+						StringField2:     "email2",
+					},
+				},
+			},
+		},
+	}
+
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), sfs, true); err != nil {
+		t.Fatal(err)
+	}
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertLine(t, []string{"false", "email1"}, lines[0])
+	assertLine(t, []string{"true", "email2"}, lines[1])
+}
+
 func Test_writeToChan(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
