@@ -48,3 +48,21 @@ type TagSeparatorSample struct {
 type DateTime struct {
 	Foo time.Time `csv:"Foo"`
 }
+
+type Level0Struct struct {
+	Level0Field level1Struct `csv:"-"`
+}
+
+type level1Struct struct {
+	Level1Field level2Struct `csv:"-"`
+}
+
+type level2Struct struct {
+	InnerStruct
+}
+
+type InnerStruct struct {
+	BoolIgnoreField0 bool   `csv:"-"`
+	BoolField1       bool   `csv:"boolField1"`
+	StringField2     string `csv:"stringField2"`
+}
