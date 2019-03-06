@@ -20,6 +20,14 @@ type EmbedSample struct {
 	Quux   string  `csv:"last"`
 }
 
+type EmbedPtrSample struct {
+	Qux string `csv:"first"`
+	*Sample
+	Ignore string  `csv:"-"`
+	Grault float64 `csv:"garply"`
+	Quux   string  `csv:"last"`
+}
+
 type SkipFieldSample struct {
 	EmbedSample
 	MoreIgnore string `csv:"-"`
