@@ -65,11 +65,19 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 
 		// if the field is a pointer to a struct, follow the pointer then create fieldinfo for each field
 		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
-			fieldsList = append(fieldsList, getFieldInfos(field.Type.Elem(), indexChain)...)
+			// unless it implements marshalText or marshalCSV. Structs that implement this
+			// should result in one value and not have their fields exposed
+			if !(canMarshal(field.Type.Elem())) {
+				fieldsList = append(fieldsList, getFieldInfos(field.Type.Elem(), indexChain)...)
+			}
 		}
 		// if the field is a struct, create a fieldInfo for each of its fields
 		if field.Type.Kind() == reflect.Struct {
-			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
+			// unless it implements marshalText or marshalCSV. Structs that implement this
+			// should result in one value and not have their fields exposed
+			if !(canMarshal(field.Type)) {
+				fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
+			}
 		}
 
 		// if the field is an embedded struct, ignore the csv tag

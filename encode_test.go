@@ -203,6 +203,30 @@ func Test_writeTo_embedptr_nil(t *testing.T) {
 	assertLine(t, []string{"", "", "", "", "", "", "", "", "0", ""}, lines[1])
 }
 
+func Test_writeTo_embedmarshal(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []EmbedMarshal{
+		{
+			Foo: &MarshalSample{Dummy: "bar"},
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"foo"}, lines[0])
+	assertLine(t, []string{"bar"}, lines[1])
+
+}
+
 func Test_writeTo_complex_embed(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}

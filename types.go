@@ -389,6 +389,14 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 // --------------------------------------------------------------------------
 // Un/serializations helpers
 
+func canMarshal(t reflect.Type) bool {
+	// unless it implements marshalText or marshalCSV. Structs that implement this
+	// should result in one value and not have their fields exposed
+	_, canMarshalText := t.MethodByName("MarshalText")
+	_, canMarshalCSV := t.MethodByName("MarshalCSV")
+	return canMarshalCSV || canMarshalText
+}
+
 func unmarshall(field reflect.Value, value string) error {
 	dupField := field
 	unMarshallIt := func(finalField reflect.Value) error {
