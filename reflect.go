@@ -62,6 +62,11 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		var cpy = make([]int, len(parentIndexChain))
 		copy(cpy, parentIndexChain)
 		indexChain := append(cpy, i)
+
+		// if the field is a pointer to a struct, follow the pointer then create fieldinfo for each field
+		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+			fieldsList = append(fieldsList, getFieldInfos(field.Type.Elem(), indexChain)...)
+		}
 		// if the field is a struct, create a fieldInfo for each of its fields
 		if field.Type.Kind() == reflect.Struct {
 			fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
