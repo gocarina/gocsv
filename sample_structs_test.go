@@ -20,6 +20,30 @@ type EmbedSample struct {
 	Quux   string  `csv:"last"`
 }
 
+type MarshalSample struct {
+	Dummy string
+}
+
+func (m MarshalSample) MarshalText() ([]byte, error) {
+	return []byte(m.Dummy), nil
+}
+func (m *MarshalSample) UnmarhsalText(text []byte) error {
+	m.Dummy = string(text)
+	return nil
+}
+
+type EmbedMarshal struct {
+	Foo *MarshalSample `csv:"foo"`
+}
+
+type EmbedPtrSample struct {
+	Qux string `csv:"first"`
+	*Sample
+	Ignore string  `csv:"-"`
+	Grault float64 `csv:"garply"`
+	Quux   string  `csv:"last"`
+}
+
 type SkipFieldSample struct {
 	EmbedSample
 	MoreIgnore string `csv:"-"`

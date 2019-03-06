@@ -13,7 +13,7 @@ import (
 
 func assertLine(t *testing.T, expected, actual []string) {
 	if len(expected) != len(actual) {
-		t.Fatalf("line length mismatch between expected: %d and actual: %d", len(expected), len(actual))
+		t.Fatalf("line length mismatch between expected: %d and actual: %d\nExpected:\n%v\nActual:\n%v\n", len(expected), len(actual), expected, actual)
 	}
 	for i := range expected {
 		if expected[i] != actual[i] {
@@ -151,6 +151,80 @@ func Test_writeTo_embed(t *testing.T) {
 	}
 	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last"}, lines[0])
 	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "2", "*string", "", "3.141592653589793", "zzz"}, lines[1])
+}
+
+func Test_writeTo_embedptr(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	blah := 2
+	sptr := "*string"
+	s := []EmbedPtrSample{
+		{
+			Qux:    "aaa",
+			Sample: &Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.2, Blah: &blah, SPtr: &sptr},
+			Ignore: "shouldn't be marshalled",
+			Quux:   "zzz",
+			Grault: math.Pi,
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last"}, lines[0])
+	assertLine(t, []string{"aaa", "f", "1", "baz", "0.2", "2", "*string", "", "3.141592653589793", "zzz"}, lines[1])
+}
+
+func Test_writeTo_embedptr_nil(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []EmbedPtrSample{
+		{},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"first", "foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last"}, lines[0])
+	assertLine(t, []string{"", "", "", "", "", "", "", "", "0", ""}, lines[1])
+}
+
+func Test_writeTo_embedmarshal(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []EmbedMarshal{
+		{
+			Foo: &MarshalSample{Dummy: "bar"},
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"foo"}, lines[0])
+	assertLine(t, []string{"bar"}, lines[1])
+
 }
 
 func Test_writeTo_complex_embed(t *testing.T) {
