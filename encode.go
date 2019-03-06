@@ -133,7 +133,15 @@ func ensureInInnerType(outInnerType reflect.Type) error {
 func getInnerField(outInner reflect.Value, outInnerWasPointer bool, index []int) (string, error) {
 	oi := outInner
 	if outInnerWasPointer {
+		if oi.IsNil() {
+			return "", nil
+		}
 		oi = outInner.Elem()
+	}
+	// because pointers can be nil need to recurse one index at a time and perform nil check
+	if len(index) > 1 {
+		nextField := oi.Field(index[0])
+		return getInnerField(nextField, nextField.Kind() == reflect.Ptr, index[1:])
 	}
 	return getFieldAsString(oi.FieldByIndex(index))
 }
