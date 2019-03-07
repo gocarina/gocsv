@@ -362,7 +362,16 @@ func createNewOutInner(outInnerWasPointer bool, outInnerType reflect.Type) refle
 func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int, value string, omitEmpty bool) error {
 	oi := *outInner
 	if outInnerWasPointer {
+		// initialize nil pointer
+		if oi.IsNil() {
+			setField(oi, "", omitEmpty)
+		}
 		oi = outInner.Elem()
+	}
+	// because pointers can be nil need to recurse one index at a time and perform nil check
+	if len(index) > 1 {
+		nextField := oi.Field(index[0])
+		return setInnerField(&nextField, nextField.Kind() == reflect.Ptr, index[1:], value, omitEmpty)
 	}
 	return setField(oi.FieldByIndex(index), value, omitEmpty)
 }
