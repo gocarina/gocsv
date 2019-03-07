@@ -125,6 +125,45 @@ ff,gg,22,hh,ii,jj`)
 	}
 }
 
+func Test_readTo_embed_ptr(t *testing.T) {
+	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee
+ff,gg,22,hh,ii,jj`)
+	d := &decoder{in: b}
+	var rows []EmbedPtrSample
+	if err := readTo(d, &rows); err != nil {
+		t.Fatalf(err.Error())
+	}
+	expected := EmbedPtrSample{
+		Qux: "ff",
+		Sample: &Sample{
+			Foo: "gg",
+			Bar: 22,
+			Baz: "hh",
+		},
+		Quux: "ii",
+	}
+	if !reflect.DeepEqual(expected, rows[1]) {
+		t.Fatalf("expected first sample %v, got %+v", expected, rows[1])
+	}
+}
+
+func Test_readTo_embed_marshal(t *testing.T) {
+	b := bytes.NewBufferString(`foo
+bar`)
+	d := &decoder{in: b}
+	var rows []EmbedMarshal
+	if err := readTo(d, &rows); err != nil {
+		t.Fatalf(err.Error())
+	}
+	expected := EmbedMarshal{
+		Foo: &MarshalSample{Dummy: "bar"},
+	}
+	if !reflect.DeepEqual(expected, rows[0]) {
+		t.Fatalf("expected first sample %v, got %+v", expected, rows[1])
+	}
+}
+
 func Test_readEach(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee

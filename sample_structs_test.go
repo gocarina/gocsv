@@ -27,7 +27,7 @@ type MarshalSample struct {
 func (m MarshalSample) MarshalText() ([]byte, error) {
 	return []byte(m.Dummy), nil
 }
-func (m *MarshalSample) UnmarhsalText(text []byte) error {
+func (m *MarshalSample) UnmarshalText(text []byte) error {
 	m.Dummy = string(text)
 	return nil
 }
