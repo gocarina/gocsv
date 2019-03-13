@@ -633,3 +633,25 @@ e,3,b,,,,`)
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 }
+
+func TestUnmarshalCSVWithoutHeaders(t *testing.T) {
+	// tsv input to test custom csv reader
+	b := []byte("f\t1\tbaz\ne\t3\tblorp")
+	r := bytes.NewReader(b)
+	csvReader := csv.NewReader(r)
+	csvReader.Comma = '\t'
+
+	var samples []Sample
+	if err := UnmarshalCSVWithoutHeaders(csvReader, &samples); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz"}
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = Sample{Foo: "e", Bar: 3, Baz: "blorp"}
+	if !reflect.DeepEqual(expected, samples[1]) {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
+	}
+}
