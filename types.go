@@ -19,13 +19,6 @@ type TypeMarshaller interface {
 	MarshalCSV() (string, error)
 }
 
-// Stringer is implemented by any value that has a String method
-// This converter is used to convert the value to it string representation
-// This converter will be used if your value does not implement TypeMarshaller
-type Stringer interface {
-	String() string
-}
-
 // TypeUnmarshaller is implemented by any value that has an UnmarshalCSV method
 // This converter is used to convert a string to your value representation of that string
 type TypeUnmarshaller interface {
@@ -51,7 +44,7 @@ func (e NoMarshalFuncError) Error() string {
 }
 
 var (
-	stringerType        = reflect.TypeOf((*Stringer)(nil)).Elem()
+	stringerType        = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 	marshallerType      = reflect.TypeOf((*TypeMarshaller)(nil)).Elem()
 	unMarshallerType    = reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem()
 	textMarshalerType   = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
@@ -451,7 +444,7 @@ func marshall(field reflect.Value) (value string, err error) {
 			}
 
 			// Otherwise try to use Stringer
-			fieldStringer, ok := fieldIface.(Stringer)
+			fieldStringer, ok := fieldIface.(fmt.Stringer)
 			if ok {
 				return fieldStringer.String(), nil
 			}
