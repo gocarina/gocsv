@@ -87,7 +87,7 @@ func mismatchHeaderFields(structInfo []fieldInfo, headers []string) []string {
 		return missing
 	}
 
-	keyMap := make(map[string]struct{}, 0)
+	keyMap := make(map[string]struct{})
 	for _, info := range structInfo {
 		for _, key := range info.keys {
 			keyMap[key] = struct{}{}

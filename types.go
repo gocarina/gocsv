@@ -43,14 +43,6 @@ func (e NoMarshalFuncError) Error() string {
 	return e.msg
 }
 
-var (
-	stringerType        = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
-	marshallerType      = reflect.TypeOf((*TypeMarshaller)(nil)).Elem()
-	unMarshallerType    = reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem()
-	textMarshalerType   = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
-	textUnMarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
-)
-
 // --------------------------------------------------------------------------
 // Conversion helpers
 
