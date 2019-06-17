@@ -158,12 +158,12 @@ func UnmarshalBytes(in []byte, out interface{}) error {
 
 // Unmarshal parses the CSV from the reader in the interface.
 func Unmarshal(in io.Reader, out interface{}) error {
-	return readTo(newDecoder(in), out)
+	return readTo(newSimpleDecoderFromReader(in), out)
 }
 
 // UnmarshalWithoutHeaders parses the CSV from the reader in the interface.
 func UnmarshalWithoutHeaders(in io.Reader, out interface{}) error {
-	return readToWithoutHeaders(newDecoder(in), out)
+	return readToWithoutHeaders(newSimpleDecoderFromReader(in), out)
 }
 
 // UnmarshalCSVWithoutHeaders parses a headerless CSV with passed in CSV reader
@@ -187,7 +187,7 @@ func UnmarshalToChan(in io.Reader, c interface{}) error {
 	if c == nil {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
-	return readEach(newDecoder(in), c)
+	return readEach(newSimpleDecoderFromReader(in), c)
 }
 
 // UnmarshalDecoderToChan parses the CSV from the decoder and send each value in the chan c.
@@ -281,7 +281,7 @@ func UnmarshalStringToCallback(in string, c interface{}) (err error) {
 
 // CSVToMap creates a simple map from a CSV of 2 columns.
 func CSVToMap(in io.Reader) (map[string]string, error) {
-	decoder := newDecoder(in)
+	decoder := newSimpleDecoderFromReader(in)
 	header, err := decoder.getCSVRow()
 	if err != nil {
 		return nil, err
