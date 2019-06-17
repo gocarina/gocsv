@@ -18,7 +18,7 @@ func Test_readTo(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr,Omit
 f,1,baz,,*string,*string
 e,3,b,,,`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	var samples []Sample
 	if err := readTo(d, &samples); err != nil {
@@ -41,7 +41,7 @@ e,3,b,,,`)
 	b = bytes.NewBufferString(`foo,BAR,Baz
 f,1,baz
 e,BAD_INPUT,b`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 	samples = []Sample{}
 	err := readTo(d, &samples)
 	if err == nil {
@@ -64,7 +64,7 @@ e,BAD_INPUT,b`)
 func Test_readTo_Time(t *testing.T) {
 	b := bytes.NewBufferString(`Foo
 1970-01-01T03:01:00+03:00`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	var samples []DateTime
 	if err := readTo(d, &samples); err != nil {
@@ -84,7 +84,7 @@ func Test_readTo_complex_embed(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	var samples []SkipFieldSample
 	if err := readTo(d, &samples); err != nil {
@@ -129,7 +129,7 @@ func Test_readTo_embed_ptr(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 	var rows []EmbedPtrSample
 	if err := readTo(d, &rows); err != nil {
 		t.Fatalf(err.Error())
@@ -151,7 +151,7 @@ ff,gg,22,hh,ii,jj`)
 func Test_readTo_embed_marshal(t *testing.T) {
 	b := bytes.NewBufferString(`foo
 bar`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 	var rows []EmbedMarshal
 	if err := readTo(d, &rows); err != nil {
 		t.Fatalf(err.Error())
@@ -168,7 +168,7 @@ func Test_readEach(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	c := make(chan SkipFieldSample)
 	var samples []SkipFieldSample
@@ -257,7 +257,7 @@ func Test_maybeDoubleHeaderNames(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 	var samples []Sample
 
 	// *** check maybeDoubleHeaderNames
@@ -277,7 +277,7 @@ e,3,b`)
 	b = bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 	ShouldAlignDuplicateHeadersWithStructFieldOrder = true
 	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)
@@ -299,7 +299,7 @@ e,3,b`)
 	b = bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 	samples = samples[:0]
 	c := make(chan Sample)
 	go func() {
@@ -319,7 +319,7 @@ e,3,b`)
 	b = bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 	c = make(chan Sample)
 	go func() {
 		if err := readEach(d, c); err == nil {
@@ -378,18 +378,19 @@ ff,gg,22,hh,ii,jj`)
 
 // TestRenamedTypes tests for unmarshaling functions on redefined basic types.
 func TestRenamedTypesUnmarshal(t *testing.T) {
-	b := bytes.NewBufferString(`foo;bar
-1,4;1.5
-2,3;2.4`)
-	d := &decoder{in: b}
-	var samples []RenamedSample
-
 	// Set different csv field separator to enable comma in floats
 	SetCSVReader(func(in io.Reader) CSVReader {
 		csvin := csv.NewReader(in)
 		csvin.Comma = ';'
 		return csvin
 	})
+
+	b := bytes.NewBufferString(`foo;bar
+1,4;1.5
+2,3;2.4`)
+	d := newSimpleDecoderFromReader(b)
+	var samples []RenamedSample
+
 	// Switch back to default for tests executed after this
 	defer SetCSVReader(DefaultCSVReader)
 
@@ -406,7 +407,7 @@ func TestRenamedTypesUnmarshal(t *testing.T) {
 	// Test that errors raised by UnmarshalCSV are correctly reported
 	b = bytes.NewBufferString(`foo;bar
 4.2;2.4`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 	samples = samples[:0]
 	if perr, _ := readTo(d, &samples).(*csv.ParseError); perr == nil {
 		t.Fatalf("Expected ParseError, got nil.")
@@ -442,7 +443,7 @@ func (e UnmarshalError) Error() string {
 func TestMultipleStructTags(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz
 e,3,b`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	var samples []MultiTagSample
 	if err := readTo(d, &samples); err != nil {
@@ -454,7 +455,7 @@ e,3,b`)
 
 	b = bytes.NewBufferString(`foo,BAR
 e,3`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 
 	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)
@@ -465,7 +466,7 @@ e,3`)
 
 	b = bytes.NewBufferString(`BAR,Baz
 3,b`)
-	d = &decoder{in: b}
+	d = newSimpleDecoderFromReader(b)
 
 	if err := readTo(d, &samples); err != nil {
 		t.Fatal(err)
@@ -478,7 +479,7 @@ e,3`)
 func TestStructTagSeparator(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz
 e,3,b`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	defaultTagSeparator := TagSeparator
 	TagSeparator = "|"
@@ -582,6 +583,20 @@ func (c *trimDecoder) getCSVRow() ([]string, error) {
 	return recoder, err
 }
 
+func (c *trimDecoder) getCSVRows() ([][]string, error) {
+	records := [][]string{}
+	for {
+		record, err := c.getCSVRow()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		records = append(records, record)
+	}
+	return records, nil
+}
+
 func TestUnmarshalToDecoder(t *testing.T) {
 	blah := 0
 	sptr := "*string"
@@ -616,7 +631,7 @@ func TestUnmarshalWithoutHeader(t *testing.T) {
 	sptr := ""
 	b := bytes.NewBufferString(`f,1,baz,1.66,,,
 e,3,b,,,,`)
-	d := &decoder{in: b}
+	d := newSimpleDecoderFromReader(b)
 
 	var samples []Sample
 	if err := readToWithoutHeaders(d, &samples); err != nil {

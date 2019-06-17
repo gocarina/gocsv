@@ -16,26 +16,7 @@ type Decoder interface {
 // SimpleDecoder .
 type SimpleDecoder interface {
 	getCSVRow() ([]string, error)
-}
-
-type decoder struct {
-	in         io.Reader
-	csvDecoder *csvDecoder
-}
-
-func newDecoder(in io.Reader) *decoder {
-	return &decoder{in: in}
-}
-
-func (decode *decoder) getCSVRows() ([][]string, error) {
-	return getCSVReader(decode.in).ReadAll()
-}
-
-func (decode *decoder) getCSVRow() ([]string, error) {
-	if decode.csvDecoder == nil {
-		decode.csvDecoder = &csvDecoder{getCSVReader(decode.in)}
-	}
-	return decode.csvDecoder.Read()
+	getCSVRows() ([][]string, error)
 }
 
 type CSVReader interface {
@@ -45,6 +26,18 @@ type CSVReader interface {
 
 type csvDecoder struct {
 	CSVReader
+}
+
+func newSimpleDecoderFromReader(r io.Reader) SimpleDecoder {
+	return csvDecoder{getCSVReader(r)}
+}
+
+// NewSimpleDecoderFromCSVReader creates a SimpleDecoder, which may be passed
+// to the UnmarshalDecoder* family of functions, from a CSV reader. Note that
+// encoding/csv.Reader implements CSVReader, so you can pass one of those
+// directly here.
+func NewSimpleDecoderFromCSVReader(r CSVReader) SimpleDecoder {
+	return csvDecoder{r}
 }
 
 func (c csvDecoder) getCSVRows() ([][]string, error) {
