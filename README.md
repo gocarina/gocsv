@@ -36,8 +36,9 @@ package main
 
 import (
 	"fmt"
-	"gocsv"
 	"os"
+
+	"github.com/gocarina/gocsv"
 )
 
 type Client struct { // Our example struct, you can use "-" to ignore a field
