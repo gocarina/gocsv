@@ -23,6 +23,7 @@ func NewUnmarshaller(reader *csv.Reader, out interface{}) (*Unmarshaller, error)
 	if err != nil {
 		return nil, err
 	}
+	headers = normalizeHeaders(headers)
 
 	um := &Unmarshaller{reader: reader, outType: reflect.TypeOf(out)}
 	err = validate(um, out, headers)

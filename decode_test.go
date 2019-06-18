@@ -61,6 +61,61 @@ e,BAD_INPUT,b`)
 
 }
 
+func Test_readToNormalized(t *testing.T) {
+	SetHeaderNormalizer(func(s string) string {
+		return strings.ToLower(s)
+	})
+	defer SetHeaderNormalizer(DefaultNameNormalizer())
+
+	blah := 0
+	sptr := "*string"
+	sptr2 := ""
+	b := bytes.NewBufferString(`FOO,BAR,BAZ,BLAH,SPTR,OMIT
+f,1,baz,,*string,*string
+e,3,b,,,`)
+	d := newSimpleDecoderFromReader(b)
+
+	var samples []Sample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr, Omit: &sptr}
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+
+	expected = Sample{Foo: "e", Bar: 3, Baz: "b", Blah: &blah, SPtr: &sptr2}
+	if !reflect.DeepEqual(expected, samples[1]) {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
+	}
+
+	b = bytes.NewBufferString(`foo,BAR,Baz
+f,1,baz
+e,BAD_INPUT,b`)
+	d = newSimpleDecoderFromReader(b)
+	samples = []Sample{}
+	err := readTo(d, &samples)
+	if err == nil {
+		t.Fatalf("Expected error from bad input, got: %+v", samples)
+	}
+	switch actualErr := err.(type) {
+	case *csv.ParseError:
+		if actualErr.Line != 3 {
+			t.Fatalf("Expected csv.ParseError on line 3, got: %d", actualErr.Line)
+		}
+		if actualErr.Column != 2 {
+			t.Fatalf("Expected csv.ParseError in column 2, got: %d", actualErr.Column)
+		}
+	default:
+		t.Fatalf("incorrect error type: %T", err)
+	}
+
+}
+
 func Test_readTo_Time(t *testing.T) {
 	b := bytes.NewBufferString(`Foo
 1970-01-01T03:01:00+03:00`)
