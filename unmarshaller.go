@@ -42,7 +42,7 @@ func (um *Unmarshaller) Read() (interface{}, error) {
 	return um.unmarshalRow(row, nil)
 }
 
-// The same as Read(), but returns a map of the columns that didn't match a field in the struct
+// ReadUnmatched is same as Read(), but returns a map of the columns that didn't match a field in the struct
 func (um *Unmarshaller) ReadUnmatched() (interface{}, map[string]string, error) {
 	row, err := um.reader.Read()
 	if err != nil {
