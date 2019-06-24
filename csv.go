@@ -117,7 +117,7 @@ func Marshal(in interface{}, out io.Writer) (err error) {
 	return writeTo(writer, in, false)
 }
 
-// Marshal returns the CSV in writer from the interface.
+// MarshalWithoutHeaders returns the CSV in writer from the interface.
 func MarshalWithoutHeaders(in interface{}, out io.Writer) (err error) {
 	writer := getCSVWriter(out)
 	return writeTo(writer, in, true)
