@@ -251,6 +251,47 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	return nil
 }
 
+func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
+	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
+	if err := ensureOutType(outType); err != nil {
+		return err
+	}
+	defer outValue.Close()
+
+	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
+	if err := ensureOutInnerType(outInnerType); err != nil {
+		return err
+	}
+	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if len(outInnerStructInfo.Fields) == 0 {
+		return errors.New("no csv struct tags found")
+	}
+
+	i := 0
+	for {
+		line, err := decoder.getCSVRow()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		for j, csvColumnContent := range line {
+			fieldInfo := outInnerStructInfo.Fields[j]
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+				return &csv.ParseError{
+					Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+					Column: j + 1,
+					Err:    err,
+				}
+			}
+		}
+		outValue.Send(outInner)
+		i++
+	}
+	return nil
+}
+
 func readToWithoutHeaders(decoder Decoder, out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {

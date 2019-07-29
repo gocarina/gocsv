@@ -190,6 +190,15 @@ func UnmarshalToChan(in io.Reader, c interface{}) error {
 	return readEach(newSimpleDecoderFromReader(in), c)
 }
 
+// UnmarshalToChanWithoutHeaders parses the CSV from the reader and send each value in the chan c.
+// The channel must have a concrete type.
+func UnmarshalToChanWithoutHeaders(in io.Reader, c interface{}) error {
+	if c == nil {
+		return fmt.Errorf("goscv: channel is %v", c)
+	}
+	return readEachWithoutHeaders(newSimpleDecoderFromReader(in), c)
+}
+
 // UnmarshalDecoderToChan parses the CSV from the decoder and send each value in the chan c.
 // The channel must have a concrete type.
 func UnmarshalDecoderToChan(in SimpleDecoder, c interface{}) error {

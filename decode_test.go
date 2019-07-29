@@ -215,6 +215,38 @@ ff,gg,22,hh,ii,jj`)
 	}
 }
 
+func Test_readEachWithoutHeaders(t *testing.T) {
+	blah := 0
+	sptr := ""
+	b := bytes.NewBufferString(`f,1,baz,1.66,,,
+e,3,b,,,,`)
+	d := newSimpleDecoderFromReader(b)
+
+	c := make(chan Sample)
+	var samples []Sample
+	go func() {
+		if err := readEachWithoutHeaders(d, c); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	for v := range c {
+		samples = append(samples, v)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+
+	expected := Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 1.66, Blah: &blah, SPtr: &sptr}
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+
+	expected = Sample{Foo: "e", Bar: 3, Baz: "b", Frop: 0, Blah: &blah, SPtr: &sptr}
+	if !reflect.DeepEqual(expected, samples[1]) {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
+	}
+}
+
 func Test_maybeMissingStructFields(t *testing.T) {
 	structTags := []fieldInfo{
 		{keys: []string{"foo"}},
