@@ -115,6 +115,15 @@ func maybeDoubleHeaderNames(headers []string) error {
 	return nil
 }
 
+// apply normalizer func to headers
+func normalizeHeaders(headers []string) []string {
+	out := make([]string, len(headers))
+	for i, h := range headers {
+		out[i] = normalizeName(h)
+	}
+	return out
+}
+
 func readTo(decoder Decoder, out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
@@ -139,7 +148,7 @@ func readTo(decoder Decoder, out interface{}) error {
 		return errors.New("no csv struct tags found")
 	}
 
-	headers := csvRows[0]
+	headers := normalizeHeaders(csvRows[0])
 	body := csvRows[1:]
 
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
@@ -190,6 +199,8 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	if err != nil {
 		return err
 	}
+	headers = normalizeHeaders(headers)
+
 	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
 		return err

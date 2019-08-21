@@ -91,7 +91,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		filteredTags := []string{}
 		for _, fieldTagEntry := range fieldTags {
 			if fieldTagEntry != "omitempty" {
-				filteredTags = append(filteredTags, fieldTagEntry)
+				filteredTags = append(filteredTags, normalizeName(fieldTagEntry))
 			} else {
 				fieldInfo.omitEmpty = true
 			}
@@ -102,7 +102,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		} else if len(filteredTags) > 0 && filteredTags[0] != "" {
 			fieldInfo.keys = filteredTags
 		} else {
-			fieldInfo.keys = []string{field.Name}
+			fieldInfo.keys = []string{normalizeName(field.Name)}
 		}
 		fieldsList = append(fieldsList, fieldInfo)
 	}
