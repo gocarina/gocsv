@@ -81,8 +81,11 @@ func validate(um *Unmarshaller, s interface{}, headers []string) error {
 			}
 		}
 	}
-	if err := maybeDoubleHeaderNames(headers); err != nil {
-		return err
+
+	if FailIfDoubleHeaderNames {
+		if err := maybeDoubleHeaderNames(headers); err != nil {
+			return err
+		}
 	}
 
 	um.headerMap = csvHeaders
