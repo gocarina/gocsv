@@ -36,11 +36,11 @@ func (e NoUnmarshalFuncError) Error() string {
 
 // NoMarshalFuncError is the custom error type to be raised in case there is no marshal function defined on type
 type NoMarshalFuncError struct {
-	msg string
+	ty reflect.Type
 }
 
 func (e NoMarshalFuncError) Error() string {
-	return e.msg
+	return "No known conversion from " + e.ty.String() + " to string, " + e.ty.String() + " does not implement TypeMarshaller nor Stringer"
 }
 
 // --------------------------------------------------------------------------
@@ -442,7 +442,7 @@ func marshall(field reflect.Value) (value string, err error) {
 			}
 		}
 
-		return value, NoMarshalFuncError{"No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implement TypeMarshaller nor Stringer"}
+		return value, NoMarshalFuncError{field.Type()}
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
 		if dupField.IsNil() {
@@ -453,5 +453,5 @@ func marshall(field reflect.Value) (value string, err error) {
 	if dupField.CanAddr() {
 		return marshallIt(dupField.Addr())
 	}
-	return value, NoMarshalFuncError{"No known conversion from " + field.Type().String() + " to string, " + field.Type().String() + " does not implement TypeMarshaller nor Stringer"}
+	return value, NoMarshalFuncError{field.Type()}
 }
