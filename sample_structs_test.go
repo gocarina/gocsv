@@ -12,6 +12,10 @@ type Sample struct {
 	Omit *string `csv:"Omit,omitempty"`
 }
 
+type SliceSample struct {
+	Slice []int `csv:"Slice"`
+}
+
 type EmbedSample struct {
 	Qux string `csv:"first"`
 	Sample

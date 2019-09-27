@@ -203,6 +203,27 @@ ff,gg,22,hh,ii,jj`)
 	}
 }
 
+func Test_readTo_slice(t *testing.T) {
+	b := bytes.NewBufferString(`Slice
+[]
+[1, 2, 3]`)
+	reader := csv.NewReader(b)
+	reader.Comma = '\t'
+	d := csvDecoder{reader}
+	samples := []SliceSample{}
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	expected := SliceSample{Slice: []int{}}
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0].Slice)
+	}
+	expected = SliceSample{Slice: []int{1, 2, 3}}
+	if !reflect.DeepEqual(expected, samples[1]) {
+		t.Fatalf("expected second sample %v, got %v", expected, samples[1].Slice)
+	}
+}
+
 func Test_readTo_embed_marshal(t *testing.T) {
 	b := bytes.NewBufferString(`foo
 bar`)
