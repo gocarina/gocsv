@@ -450,7 +450,7 @@ func marshall(field reflect.Value) (value string, err error) {
 		dupField = dupField.Elem()
 	}
 	if dupField.CanAddr() {
-		return marshallIt(dupField.Addr())
+		dupField = dupField.Addr()
 	}
-	return value, NoMarshalFuncError{field.Type()}
+	return marshallIt(dupField)
 }
