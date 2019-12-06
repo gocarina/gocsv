@@ -125,6 +125,10 @@ func normalizeHeaders(headers []string) []string {
 }
 
 func readTo(decoder Decoder, out interface{}) error {
+	return readToWithErrorHandler(decoder, nil, out)
+}
+
+func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureOutType(outType); err != nil {
 		return err
@@ -181,10 +185,13 @@ func readTo(decoder Decoder, out interface{}) error {
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
 				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
-					return &csv.ParseError{
+					parseError := csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
 						Column: j + 1,
 						Err:    err,
+					}
+					if errHandler == nil || !errHandler(&parseError) {
+						return &parseError
 					}
 				}
 			}
