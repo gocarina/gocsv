@@ -37,6 +37,8 @@ var TagSeparator = ","
 // or convert '-' to '_'.
 type Normalizer func(string) string
 
+type ErrorHandler func(*csv.ParseError) bool
+
 // normalizeName function initially set to a nop Normalizer.
 var normalizeName = DefaultNameNormalizer()
 
@@ -161,6 +163,11 @@ func UnmarshalFile(in *os.File, out interface{}) error {
 	return Unmarshal(in, out)
 }
 
+// UnmarshalFile parses the CSV from the file in the interface.
+func UnmarshalFileWithErrorHandler(in *os.File, errHandler ErrorHandler, out interface{}) error {
+	return UnmarshalWithErrorHandler(in, errHandler, out)
+}
+
 // UnmarshalString parses the CSV from the string in the interface.
 func UnmarshalString(in string, out interface{}) error {
 	return Unmarshal(strings.NewReader(in), out)
@@ -174,6 +181,11 @@ func UnmarshalBytes(in []byte, out interface{}) error {
 // Unmarshal parses the CSV from the reader in the interface.
 func Unmarshal(in io.Reader, out interface{}) error {
 	return readTo(newSimpleDecoderFromReader(in), out)
+}
+
+// Unmarshal parses the CSV from the reader in the interface.
+func UnmarshalWithErrorHandler(in io.Reader, errHandle ErrorHandler, out interface{}) error {
+	return readToWithErrorHandler(newSimpleDecoderFromReader(in), errHandle, out)
 }
 
 // UnmarshalWithoutHeaders parses the CSV from the reader in the interface.
