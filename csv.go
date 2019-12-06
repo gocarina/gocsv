@@ -185,7 +185,7 @@ func Unmarshal(in io.Reader, out interface{}) error {
 
 // Unmarshal parses the CSV from the reader in the interface.
 func UnmarshalWithErrorHandler(in io.Reader, errHandle ErrorHandler, out interface{}) error {
-	return readToWithErrorHandler(newSimpleDecoderFromReader(in), errHandler, out)
+	return readToWithErrorHandler(newSimpleDecoderFromReader(in), errHandle, out)
 }
 
 // UnmarshalWithoutHeaders parses the CSV from the reader in the interface.
