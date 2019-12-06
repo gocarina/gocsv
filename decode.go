@@ -185,12 +185,13 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
 				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
-					if errHandler == nil || !errHandler(err) {
-						return &csv.ParseError{
-							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-							Column: j + 1,
-							Err:    err,
-						}
+					parseError := csv.ParseError{
+						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+						Column: j + 1,
+						Err:    err,
+					}
+					if errHandler == nil || !errHandler(&parseError) {
+						return &parseError
 					}
 				}
 			}

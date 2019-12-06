@@ -37,7 +37,7 @@ var TagSeparator = ","
 // or convert '-' to '_'.
 type Normalizer func(string) string
 
-type ErrorHandler func(error) bool
+type ErrorHandler func(*csv.ParseError) bool
 
 // normalizeName function initially set to a nop Normalizer.
 var normalizeName = DefaultNameNormalizer()
