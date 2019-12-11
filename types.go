@@ -289,8 +289,7 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 
 func getFieldAsString(field reflect.Value) (str string, err error) {
 	switch field.Kind() {
-	case reflect.Interface:
-	case reflect.Ptr:
+	case reflect.Interface, reflect.Ptr:
 		if field.IsNil() {
 			return "", nil
 		}
