@@ -275,63 +275,6 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	return nil
 }
 
-// UnmarshalToCallbackWithError parses the CSV from the reader and
-// send each value to the given func f.
-//
-// If func returns error, it will stop processing, drain the
-// parser and propagate the error to caller.
-//
-// The func must look like func(Struct) error.
-func UnmarshalBytesToCallbackWithError(in []byte, f interface{}) error {
-	valueFunc := reflect.ValueOf(f)
-	t := reflect.TypeOf(f)
-	if t.NumIn() != 1 {
-		return fmt.Errorf("the given function must have exactly one parameter")
-	}
-	if t.NumOut() != 1 {
-		return fmt.Errorf("the given function must have exactly one return value")
-	}
-	if !isErrorType(t.Out(0)) {
-		return fmt.Errorf("the given function must only return error.")
-	}
-
-	cerr := make(chan error)
-	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
-	go func() {
-		cerr <- UnmarshalBytesToChan(in, c.Interface())
-	}()
-
-	var fErr error
-	for {
-		select {
-		case err := <-cerr:
-			if err != nil {
-				return err
-			}
-			return fErr
-		default:
-		}
-		v, notClosed := c.Recv()
-		if !notClosed || v.Interface() == nil {
-			break
-		}
-
-		// callback f has already returned an error, stop processing but keep draining the chan c
-		if fErr != nil {
-			continue
-		}
-
-		results := valueFunc.Call([]reflect.Value{v})
-
-		// If the callback f returns an error, stores it and returns it in future.
-		errValue := results[0].Interface()
-		if errValue != nil {
-			fErr = errValue.(error)
-		}
-	}
-	return fErr
-}
-
 // UnmarshalDecoderToCallback parses the CSV from the decoder and send each value to the given func f.
 // The func must look like func(Struct).
 func UnmarshalDecoderToCallback(in SimpleDecoder, f interface{}) error {
@@ -370,6 +313,85 @@ func UnmarshalBytesToCallback(in []byte, f interface{}) error {
 // The func must look like func(Struct).
 func UnmarshalStringToCallback(in string, c interface{}) (err error) {
 	return UnmarshalToCallback(strings.NewReader(in), c)
+}
+
+// UnmarshalToCallbackWithError parses the CSV from the reader and
+// send each value to the given func f.
+//
+// If func returns error, it will stop processing, drain the
+// parser and propagate the error to caller.
+//
+// The func must look like func(Struct) error.
+func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
+	valueFunc := reflect.ValueOf(f)
+	t := reflect.TypeOf(f)
+	if t.NumIn() != 1 {
+		return fmt.Errorf("the given function must have exactly one parameter")
+	}
+	if t.NumOut() != 1 {
+		return fmt.Errorf("the given function must have exactly one return value")
+	}
+	if !isErrorType(t.Out(0)) {
+		return fmt.Errorf("the given function must only return error.")
+	}
+
+	cerr := make(chan error)
+	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
+	go func() {
+		cerr <- UnmarshalToChan(in, c.Interface())
+	}()
+
+	var fErr error
+	for {
+		select {
+		case err := <-cerr:
+			if err != nil {
+				return err
+			}
+			return fErr
+		default:
+		}
+		v, notClosed := c.Recv()
+		if !notClosed || v.Interface() == nil {
+			break
+		}
+
+		// callback f has already returned an error, stop processing but keep draining the chan c
+		if fErr != nil {
+			continue
+		}
+
+		results := valueFunc.Call([]reflect.Value{v})
+
+		// If the callback f returns an error, stores it and returns it in future.
+		errValue := results[0].Interface()
+		if errValue != nil {
+			fErr = errValue.(error)
+		}
+	}
+	return fErr
+}
+
+// UnmarshalBytesToCallbackWithError parses the CSV from the bytes and
+// send each value to the given func f.
+//
+// If func returns error, it will stop processing, drain the
+// parser and propagate the error to caller.
+//
+// The func must look like func(Struct) error.
+func UnmarshalBytesToCallbackWithError(in []byte, f interface{}) error {
+	return UnmarshalToCallbackWithError(bytes.NewReader(in), f)
+}
+
+// UnmarshalStringToCallbackWithError parses the CSV from the string and
+// send each value to the given func f.
+//
+// If func returns error, it will stop processing, drain the
+// parser and propagate the error to caller.
+//
+// The func must look like func(Struct) error.
+func UnmarshalStringToCallbackWithError(in string, c interface{}) (err error) {
+	return UnmarshalToCallbackWithError(strings.NewReader(in), c)
 }
 
 // CSVToMap creates a simple map from a CSV of 2 columns.
