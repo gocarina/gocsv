@@ -105,7 +105,7 @@ func Test_writeTo_multipleTags(t *testing.T) {
 	e := &encoder{out: &b}
 	s := []MultiTagSample{
 		{Foo: "abc", Bar: 123},
-		{Foo: "def", Bar: 234},
+		{Foo: "def", Bar: 234, Ignored: 11},
 	}
 	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
 		t.Fatal(err)

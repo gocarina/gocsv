@@ -64,8 +64,9 @@ type RenamedSample struct {
 }
 
 type MultiTagSample struct {
-	Foo string `csv:"Baz,foo"`
-	Bar int    `csv:"BAR"`
+	Foo     string `csv:"Baz,foo"`
+	Bar     int    `csv:"BAR"`
+	Ignored int    `csv:"-"`
 }
 
 type TagSeparatorSample struct {

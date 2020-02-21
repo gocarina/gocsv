@@ -80,13 +80,14 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 			}
 		}
 
-		// if the field is an embedded struct, ignore the csv tag
-		if field.Anonymous {
+		fieldTag := field.Tag.Get("csv")
+
+		// skips including the upper-level struct name unless a csv tag is specified
+		if field.Anonymous && fieldTag == "" {
 			continue
 		}
 
 		fieldInfo := fieldInfo{IndexChain: indexChain}
-		fieldTag := field.Tag.Get("csv")
 		fieldTags := strings.Split(fieldTag, TagSeparator)
 		filteredTags := []string{}
 		for _, fieldTagEntry := range fieldTags {
