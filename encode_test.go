@@ -105,8 +105,9 @@ func Test_writeTo_multipleTags(t *testing.T) {
 	e := &encoder{out: &b}
 	s := []MultiTagSample{
 		{Foo: "abc", Bar: 123},
-		{Foo: "def", Bar: 234, Ignored: 11},
+		{Foo: "def", Bar: 234, Ignored: TagSeparatorSample{Foo: "test", Bar: 5}},
 	}
+
 	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
 		t.Fatal(err)
 	}
@@ -300,8 +301,9 @@ func Test_writeTo_complex_inner_struct_embed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertLine(t, []string{"false", "email1"}, lines[0])
-	assertLine(t, []string{"true", "email2"}, lines[1])
+	if len(lines) > 0 {
+		t.Fatal("ignored parent structs should also ignore child values and structs")
+	}
 }
 
 func Test_writeToChan(t *testing.T) {
