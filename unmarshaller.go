@@ -10,7 +10,7 @@ import (
 // Unmarshaller is a CSV to struct unmarshaller.
 type Unmarshaller struct {
 	reader                 *csv.Reader
-	headerMap              []string
+	Headers                []string
 	fieldInfoMap           []*fieldInfo
 	MismatchedHeaders      []string
 	MismatchedStructFields []string
@@ -68,11 +68,9 @@ func validate(um *Unmarshaller, s interface{}, headers []string) error {
 	if len(structInfo.Fields) == 0 {
 		return errors.New("no csv struct tags found")
 	}
-	csvHeaders := make([]string, len(headers))           // Map of columm index to header name
 	csvHeadersLabels := make([]*fieldInfo, len(headers)) // Used to store the corresponding header <-> position in CSV
 	headerCount := map[string]int{}
 	for i, csvColumnHeader := range headers {
-		csvHeaders[i] = csvColumnHeader
 		curHeaderCount := headerCount[csvColumnHeader]
 		if fieldInfo := getCSVFieldPosition(csvColumnHeader, structInfo, curHeaderCount); fieldInfo != nil {
 			csvHeadersLabels[i] = fieldInfo
@@ -89,7 +87,7 @@ func validate(um *Unmarshaller, s interface{}, headers []string) error {
 		}
 	}
 
-	um.headerMap = csvHeaders
+	um.Headers = headers
 	um.fieldInfoMap = csvHeadersLabels
 	um.MismatchedHeaders = mismatchHeaderFields(structInfo.Fields, headers)
 	um.MismatchedStructFields = mismatchStructFields(structInfo.Fields, headers)
@@ -112,7 +110,7 @@ func (um *Unmarshaller) unmarshalRow(row []string, unmatched map[string]string) 
 				return nil, fmt.Errorf("cannot assign field at %v to %s through index chain %v: %v", j, outValue.Type(), fieldInfo.IndexChain, err)
 			}
 		} else if unmatched != nil {
-			unmatched[um.headerMap[j]] = csvColumnContent
+			unmatched[um.Headers[j]] = csvColumnContent
 		}
 	}
 	return outValue.Interface(), nil
