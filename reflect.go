@@ -35,19 +35,21 @@ func (f fieldInfo) matchesKey(key string) bool {
 	return false
 }
 
+var structInfoCache sync.Map
 var structMap = make(map[reflect.Type]*structInfo)
 var structMapMutex sync.RWMutex
 
 func getStructInfo(rType reflect.Type) *structInfo {
-	structMapMutex.RLock()
-	stInfo, ok := structMap[rType]
-	structMapMutex.RUnlock()
+	stInfo, ok := structInfoCache.Load(rType)
 	if ok {
-		return stInfo
+		return stInfo.(*structInfo)
 	}
+
 	fieldsList := getFieldInfos(rType, []int{})
 	stInfo = &structInfo{fieldsList}
-	return stInfo
+	structInfoCache.Store(rType, stInfo)
+
+	return stInfo.(*structInfo)
 }
 
 func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
