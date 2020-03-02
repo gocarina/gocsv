@@ -14,6 +14,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 // FailIfUnmatchedStructTags indicates whether it is considered an error when there is an unmatched
@@ -46,7 +47,11 @@ var normalizeName = DefaultNameNormalizer()
 func DefaultNameNormalizer() Normalizer { return func(s string) string { return s } }
 
 // SetHeaderNormalizer sets the normalizer used to normalize struct and header field names.
-func SetHeaderNormalizer(f Normalizer) { normalizeName = f }
+func SetHeaderNormalizer(f Normalizer) {
+	normalizeName = f
+	// Need to clear the cache hen the header normalizer changes.
+	structInfoCache = sync.Map{}
+}
 
 // --------------------------------------------------------------------------
 // CSVWriter used to format CSV

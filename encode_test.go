@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"io"
+	"io/ioutil"
 	"math"
 	"strconv"
 	"strings"
@@ -405,4 +406,14 @@ type MarshalError struct {
 
 func (e MarshalError) Error() string {
 	return e.msg
+}
+
+func Benchmark_MarshalCSVWithoutHeaders(b *testing.B) {
+	dst := NewSafeCSVWriter(csv.NewWriter(ioutil.Discard))
+	for n := 0; n < b.N; n++ {
+		err := MarshalCSVWithoutHeaders([]Sample{{}}, dst)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
