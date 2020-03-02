@@ -294,26 +294,23 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 			return "", nil
 		}
 		return getFieldAsString(field.Elem())
+	case reflect.String:
+		return field.String(), nil
 	default:
 		// Check if field is go native type
 		switch field.Interface().(type) {
 		case string:
 			return field.String(), nil
 		case bool:
-			str, err = toString(field.Bool())
-			if err != nil {
-				return str, err
+			if field.Bool() {
+				return "true", nil
+			} else {
+				return "false", nil
 			}
 		case int, int8, int16, int32, int64:
-			str, err = toString(field.Int())
-			if err != nil {
-				return str, err
-			}
+			return fmt.Sprintf("%v", field.Int()), nil
 		case uint, uint8, uint16, uint32, uint64:
-			str, err = toString(field.Uint())
-			if err != nil {
-				return str, err
-			}
+			return fmt.Sprintf("%v", field.Uint()), nil
 		case float32:
 			str, err = toString(float32(field.Float()))
 			if err != nil {
