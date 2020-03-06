@@ -202,17 +202,18 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 }
 
 func readEach(decoder SimpleDecoder, c interface{}) error {
+	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer)
+	if outType.Kind() != reflect.Chan {
+		return fmt.Errorf("cannot use %v with type %s, only channel supported", c, outType)
+	}
+	defer outValue.Close()
+
 	headers, err := decoder.getCSVRow()
 	if err != nil {
 		return err
 	}
 	headers = normalizeHeaders(headers)
 
-	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := ensureOutType(outType); err != nil {
-		return err
-	}
-	defer outValue.Close()
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
