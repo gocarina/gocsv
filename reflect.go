@@ -88,7 +88,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		}
 
 		fieldInfo := fieldInfo{IndexChain: indexChain}
-		fieldTag := field.Tag.Get("csv")
+		fieldTag := field.Tag.Get(TagName)
 		fieldTags := strings.Split(fieldTag, TagSeparator)
 		filteredTags := []string{}
 		for _, fieldTagEntry := range fieldTags {

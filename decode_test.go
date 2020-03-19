@@ -605,6 +605,27 @@ e,3,b`)
 	}
 }
 
+func TestCustomTag(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR
+e,3`)
+	d := newSimpleDecoderFromReader(b)
+
+	defaultTagName := TagName
+	TagName = "custom"
+	defer func() {
+		TagName = defaultTagName
+	}()
+
+	var samples []CustomTagSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+
+	if samples[0].Foo != "e" {
+		t.Fatal("wrong value in custom tag struct field")
+	}
+}
+
 func TestCSVToMap(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR
 4,Jose

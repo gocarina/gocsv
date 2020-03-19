@@ -29,6 +29,9 @@ var FailIfDoubleHeaderNames = false
 // headers per their alignment in the struct definition.
 var ShouldAlignDuplicateHeadersWithStructFieldOrder = false
 
+// TagName defines key in the struct field's tag to scan
+var TagName = "csv"
+
 // TagSeparator defines seperator string for multiple csv tags in struct fields
 var TagSeparator = ","
 
