@@ -73,6 +73,11 @@ type TagSeparatorSample struct {
 	Bar int    `csv:"BAR"`
 }
 
+type CustomTagSample struct {
+	Foo string `custom:"foo"`
+	Bar string `csv:"BAR"`
+}
+
 type DateTime struct {
 	Foo time.Time `csv:"Foo"`
 }
