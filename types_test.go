@@ -89,3 +89,26 @@ func Benchmark_marshall_Stringer(b *testing.B) {
 		}
 	}
 }
+
+func TestToInt(t *testing.T){
+	TestCase := []struct{
+		field string
+		result int
+		err error
+	}{
+		{"123.2", 123, nil},
+		{"123", 123, nil},
+		{"1.2.3", 1, nil},
+		{"0.123", 0, nil},
+	}
+
+	for idx, item := range TestCase{
+		out, err:=toInt(item.field)
+		if err != nil{
+			t.Fatal(err)
+		}
+		if int(out) != item.result{
+			t.Fatal(idx, "result not equal")
+		}
+	}
+}
