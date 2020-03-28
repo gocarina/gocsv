@@ -180,10 +180,30 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		}
 	}
 
+	var withFieldsOK bool
+	var fieldTypeUnmarshallerWithKeys TypeUnmarshalCSVWithFields
+
 	for i, csvRow := range body {
+		objectIface := reflect.New(outValue.Index(i).Type()).Interface()
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range csvRow {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
+
+				if outInner.CanInterface() {
+					fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
+					if withFieldsOK {
+						if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(fieldInfo.getFirstKey(), csvColumnContent); err != nil {
+							parseError := csv.ParseError{
+								Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+								Column: j + 1,
+								Err:    err,
+							}
+							return &parseError
+						}
+						continue
+					}
+				}
+
 				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
 					parseError := csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
@@ -196,6 +216,12 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 				}
 			}
 		}
+
+		if withFieldsOK {
+			reflectedObject := reflect.ValueOf(objectIface)
+			outInner = reflectedObject.Elem()
+		}
+
 		outValue.Index(i).Set(outInner)
 	}
 	return nil
