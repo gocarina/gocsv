@@ -99,3 +99,12 @@ type InnerStruct struct {
 	BoolField1       bool   `csv:"boolField1"`
 	StringField2     string `csv:"stringField2"`
 }
+
+var _ TypeUnmarshalCSVWithFields = (*UnmarshalCSVWithFieldsSample)(nil)
+
+type UnmarshalCSVWithFieldsSample struct {
+	Foo  string  `csv:"foo"`
+	Bar  int     `csv:"bar"`
+	Baz  string  `csv:"baz"`
+	Frop float64 `csv:"frop"`
+}
