@@ -25,6 +25,11 @@ type TypeUnmarshaller interface {
 	UnmarshalCSV(string) error
 }
 
+// TypeUnmarshalCSVWithFields can be implemented on whole structs to allow for whole structures to customized internal vs one off fields
+type TypeUnmarshalCSVWithFields interface {
+	UnmarshalCSVWithFields(key, value string) error
+}
+
 // NoUnmarshalFuncError is the custom error type to be raised in case there is no unmarshal function defined on type
 type NoUnmarshalFuncError struct {
 	msg string
