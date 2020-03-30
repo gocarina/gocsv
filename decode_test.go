@@ -540,6 +540,86 @@ func (rf *RenamedFloat64Unmarshaler) UnmarshalCSV(csv string) (err error) {
 	return nil
 }
 
+// TestUnmarshalCSVWithFields test that the TestUnmarshalCSVWithFields interface to marshall all the fields works
+func TestUnmarshalCSVWithFields(t *testing.T) {
+	b := []byte(`foo,bar,baz,frop
+bar,1,zip,3.14
+baz,2,zap,4.00`)
+	var samples []UnmarshalCSVWithFieldsSample
+	err := UnmarshalBytes(b, &samples)
+	if err != nil {
+		t.Fatalf("UnmarshalCSVWithFields() -> UnmarshalBytes() %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		index    int
+		wantFoo  string
+		wantBar  int
+		wantBaz  string
+		wantFrop float64
+	}{
+		{
+			name:     "should validate index 0",
+			index:    0,
+			wantFoo:  "bar",
+			wantBar:  1,
+			wantBaz:  "zip",
+			wantFrop: 314,
+		},
+		{
+			name:     "should validate index 1",
+			index:    1,
+			wantFoo:  "baz",
+			wantBar:  2,
+			wantBaz:  "zap",
+			wantFrop: 400,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if samples[tt.index].Foo != tt.wantFoo {
+				t.Fatalf("UnmarshalCSVWithFields() Index %d Foo expected %v got %v", tt.index, tt.wantFoo, samples[tt.index].Foo)
+			}
+
+			if samples[tt.index].Bar != tt.wantBar {
+				t.Fatalf("UnmarshalCSVWithFields() Index %d Bar expected %v got %v", tt.index, tt.wantBar, samples[tt.index].Bar)
+			}
+
+			if samples[tt.index].Baz != tt.wantBaz {
+				t.Fatalf("UnmarshalCSVWithFields() Index %d Baz expected %v got %v", tt.index, tt.wantBaz, samples[tt.index].Baz)
+			}
+
+			if samples[tt.index].Frop != tt.wantFrop {
+				t.Fatalf("UnmarshalCSVWithFields() Index %d Frop expected %v got %v", tt.index, tt.wantFrop, samples[tt.index].Frop)
+			}
+
+		})
+	}
+}
+
+func (u *UnmarshalCSVWithFieldsSample) UnmarshalCSVWithFields(key, value string) error {
+	switch key {
+	case "foo":
+		u.Foo = value
+	case "bar":
+		i, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+		u.Bar = i
+	case "baz":
+		u.Baz = value
+	case "frop":
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return err
+		}
+		u.Frop = f * 100
+	}
+	return nil
+}
+
 type UnmarshalError struct {
 	msg string
 }
