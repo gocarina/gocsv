@@ -6,6 +6,12 @@ import (
 	"sync"
 )
 
+type CSVWriter interface {
+	Write(row []string) error
+	Flush()
+	Error() error
+}
+
 type SafeCSVWriter struct {
 	*csv.Writer
 	m sync.Mutex

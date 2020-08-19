@@ -14,7 +14,7 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func writeFromChan(writer *SafeCSVWriter, c <-chan interface{}) error {
+func writeFromChan(writer CSVWriter, c <-chan interface{}) error {
 	// Get the first value. It wil determine the header structure.
 	firstValue, ok := <-c
 	if !ok {
@@ -63,7 +63,7 @@ func writeFromChan(writer *SafeCSVWriter, c <-chan interface{}) error {
 	return writer.Error()
 }
 
-func writeTo(writer *SafeCSVWriter, in interface{}, omitHeaders bool) error {
+func writeTo(writer CSVWriter, in interface{}, omitHeaders bool) error {
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureInType(inType); err != nil {
 		return err
