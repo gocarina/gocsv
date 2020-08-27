@@ -149,17 +149,17 @@ func MarshalWithoutHeaders(in interface{}, out io.Writer) (err error) {
 }
 
 // MarshalChan returns the CSV read from the channel.
-func MarshalChan(c <-chan interface{}, out *SafeCSVWriter) error {
+func MarshalChan(c <-chan interface{}, out CSVWriter) error {
 	return writeFromChan(out, c)
 }
 
 // MarshalCSV returns the CSV in writer from the interface.
-func MarshalCSV(in interface{}, out *SafeCSVWriter) (err error) {
+func MarshalCSV(in interface{}, out CSVWriter) (err error) {
 	return writeTo(out, in, false)
 }
 
 // MarshalCSVWithoutHeaders returns the CSV in writer from the interface.
-func MarshalCSVWithoutHeaders(in interface{}, out *SafeCSVWriter) (err error) {
+func MarshalCSVWithoutHeaders(in interface{}, out CSVWriter) (err error) {
 	return writeTo(out, in, true)
 }
 
