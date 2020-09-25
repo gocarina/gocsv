@@ -361,6 +361,9 @@ func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
 		}
 		v, notClosed := c.Recv()
 		if !notClosed || v.Interface() == nil {
+			if err := <- cerr; err != nil {
+				fErr = err
+			}
 			break
 		}
 
