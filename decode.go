@@ -32,6 +32,11 @@ func newSimpleDecoderFromReader(r io.Reader) SimpleDecoder {
 	return csvDecoder{getCSVReader(r)}
 }
 
+var (
+	ErrEmptyCSVFile = errors.New("empty csv file given")
+	ErrNoStructTags = errors.New("no csv struct tags found")
+)
+
 // NewSimpleDecoderFromCSVReader creates a SimpleDecoder, which may be passed
 // to the UnmarshalDecoder* family of functions, from a CSV reader. Note that
 // encoding/csv.Reader implements CSVReader, so you can pass one of those
@@ -142,14 +147,14 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		return err
 	}
 	if len(csvRows) == 0 {
-		return errors.New("empty csv file given")
+		return ErrEmptyCSVFile
 	}
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
 	if len(outInnerStructInfo.Fields) == 0 {
-		return errors.New("no csv struct tags found")
+		return ErrEmptyCSVFile
 	}
 
 	headers := normalizeHeaders(csvRows[0])
@@ -246,7 +251,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
 	if len(outInnerStructInfo.Fields) == 0 {
-		return errors.New("no csv struct tags found")
+		return ErrNoStructTags
 	}
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
 	headerCount := map[string]int{}
@@ -309,7 +314,7 @@ func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
 	if len(outInnerStructInfo.Fields) == 0 {
-		return errors.New("no csv struct tags found")
+		return ErrNoStructTags
 	}
 
 	i := 0
@@ -351,14 +356,14 @@ func readToWithoutHeaders(decoder Decoder, out interface{}) error {
 		return err
 	}
 	if len(csvRows) == 0 {
-		return errors.New("empty csv file given")
+		return ErrEmptyCSVFile
 	}
 	if err := ensureOutCapacity(&outValue, len(csvRows)+1); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
 	if len(outInnerStructInfo.Fields) == 0 {
-		return errors.New("no csv struct tags found")
+		return ErrNoStructTags
 	}
 
 	for i, csvRow := range csvRows {

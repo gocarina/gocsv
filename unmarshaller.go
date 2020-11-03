@@ -2,7 +2,6 @@ package gocsv
 
 import (
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"reflect"
 )
@@ -66,7 +65,7 @@ func validate(um *Unmarshaller, s interface{}, headers []string) error {
 	}
 	structInfo := getStructInfo(concreteType) // Get struct info to get CSV annotations.
 	if len(structInfo.Fields) == 0 {
-		return errors.New("no csv struct tags found")
+		return ErrNoStructTags
 	}
 	csvHeadersLabels := make([]*fieldInfo, len(headers)) // Used to store the corresponding header <-> position in CSV
 	headerCount := map[string]int{}
