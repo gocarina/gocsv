@@ -300,8 +300,6 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 			return "", nil
 		}
 		return getFieldAsString(field.Elem())
-	case reflect.String:
-		return field.String(), nil
 	default:
 		// Check if field is go native type
 		switch field.Interface().(type) {
