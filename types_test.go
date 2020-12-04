@@ -37,6 +37,33 @@ func (s sampleStringer) String() string {
 	return string(s)
 }
 
+type stringAlias string
+type customStringAlias string
+
+func (s customStringAlias) MarshalCSV() (string, error) {
+	return `"` + string(s) + `"`, nil
+}
+
+func Test_getFieldAsString_CustomStringAlias(t *testing.T) {
+	s, err := getFieldAsString(reflect.ValueOf(customStringAlias("foo")))
+	if err != nil {
+		t.Fatalf("getFieldAsString failure: %s", err)
+	}
+
+	if string(s) != `"foo"` {
+		t.Fatalf(`expected "foo" got %s`, s)
+	}
+
+	s, err = getFieldAsString(reflect.ValueOf(stringAlias("foo")))
+	if err != nil {
+		t.Fatalf("getFieldAsString failure: %s", err)
+	}
+
+	if string(s) != `foo` {
+		t.Fatalf(`expected foo got %s`, s)
+	}
+}
+
 func Benchmark_unmarshall_TypeUnmarshaller(b *testing.B) {
 	sample := sampleTypeUnmarshaller{}
 	val := reflect.ValueOf(&sample)
