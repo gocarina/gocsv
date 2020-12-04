@@ -37,6 +37,7 @@ func (s sampleStringer) String() string {
 	return string(s)
 }
 
+type stringAlias string
 type customStringAlias string
 
 func (s customStringAlias) MarshalCSV() (string, error) {
@@ -44,13 +45,22 @@ func (s customStringAlias) MarshalCSV() (string, error) {
 }
 
 func Test_getFieldAsString_CustomStringAlias(t *testing.T) {
-	s, err := getFieldAsString(reflect.ValueOf(customStringAlias(("foo"))))
+	s, err := getFieldAsString(reflect.ValueOf(customStringAlias("foo")))
 	if err != nil {
 		t.Fatalf("getFieldAsString failure: %s", err)
 	}
 
 	if string(s) != `"foo"` {
 		t.Fatalf(`expected "foo" got %s`, s)
+	}
+
+	s, err = getFieldAsString(reflect.ValueOf(stringAlias("foo")))
+	if err != nil {
+		t.Fatalf("getFieldAsString failure: %s", err)
+	}
+
+	if string(s) != `foo` {
+		t.Fatalf(`expected foo got %s`, s)
 	}
 }
 
