@@ -154,7 +154,7 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
 	if len(outInnerStructInfo.Fields) == 0 {
-		return ErrEmptyCSVFile
+		return ErrNoStructTags
 	}
 
 	headers := normalizeHeaders(csvRows[0])
