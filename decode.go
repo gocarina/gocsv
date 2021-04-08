@@ -208,8 +208,11 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 						continue
 					}
 				}
-
-				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+				value := csvColumnContent
+				if value == "" {
+					value = fieldInfo.defaultValue
+				}
+				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, value, fieldInfo.omitEmpty); err != nil { // Set field of struct
 					parseError := csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
 						Column: j + 1,
