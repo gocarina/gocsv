@@ -879,3 +879,25 @@ func TestUnmarshalCSVWithoutHeaders(t *testing.T) {
 		t.Fatalf("expected second sample %v, got %v", expected, samples[1])
 	}
 }
+
+func TestDecodeDefaultValues(t *testing.T) {
+	type defaultValueStruct struct {
+		Foo string `csv:"foo,default=x"`
+		Bar int    `csv:"bar,default=42"`
+	}
+	b := bytes.NewBufferString(`foo,bar
+,
+`)
+	var out []defaultValueStruct
+	if err := Unmarshal(b, &out); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := defaultValueStruct{
+		Foo: "x",
+		Bar: 42,
+	}
+	if !reflect.DeepEqual(expected, out[0]) {
+		t.Fatalf("expected second sample %v, got %v", expected, out[0])
+	}
+}
