@@ -901,3 +901,55 @@ func TestDecodeDefaultValues(t *testing.T) {
 		t.Fatalf("expected second sample %v, got %v", expected, out[0])
 	}
 }
+
+func TestUnmarshalCSVToMap(t *testing.T) {
+	b := []byte(`line	tokens
+10	["PRINT", "\"Hello map!\""]
+20	["GOTO", "10"]`)
+	r := bytes.NewReader(b)
+	csvReader := csv.NewReader(r)
+	csvReader.LazyQuotes = true
+	csvReader.Comma = '\t'
+
+	var sample map[int][]string
+	if err := UnmarshalCSVToMap(csvReader, &sample); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := map[int][]string{
+		10: {"PRINT", "\"Hello map!\""},
+		20: {"GOTO", "10"},
+	}
+	if !reflect.DeepEqual(expected, sample) {
+		t.Fatalf("expected %v, got %v", expected, sample)
+	}
+}
+
+func BenchmarkCSVToMap(b *testing.B) {
+	bufstring := bytes.NewBufferString(`foo,BAR
+4,Jose
+2,Daniel
+5,Vincent`)
+	for n := 0; n < b.N; n++ {
+		_, err := CSVToMap(bytes.NewReader(bufstring.Bytes()))
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalCSVToMap(b *testing.B) {
+	bufstring := []byte(`foo,BAR
+4,Jose
+2,Daniel
+5,Vincent`)
+	for n := 0; n < b.N; n++ {
+		var sample map[string]string
+		r := bytes.NewReader(bufstring)
+		d := csv.NewReader(r)
+		err := UnmarshalCSVToMap(d, &sample)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
