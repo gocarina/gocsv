@@ -216,6 +216,43 @@ func UnmarshalCSV(in CSVReader, out interface{}) error {
 	return readTo(csvDecoder{in}, out)
 }
 
+// UnmarshalCSVToMap parses a CSV of 2 columns into a map.
+func UnmarshalCSVToMap(in CSVReader, out interface{}) error {
+	decoder := NewSimpleDecoderFromCSVReader(in)
+	header, err := decoder.getCSVRow()
+	if err != nil {
+		return err
+	}
+	if len(header) != 2 {
+		return fmt.Errorf("maps can only be created for csv of two columns")
+	}
+	outValue, outType := getConcreteReflectValueAndType(out)
+	if outType.Kind() != reflect.Map {
+		return fmt.Errorf("cannot use " + outType.String() + ", only map supported")
+	}
+	keyType := outType.Key()
+	valueType := outType.Elem()
+	outValue.Set(reflect.MakeMap(outType))
+	for {
+		key := reflect.New(keyType)
+		value := reflect.New(valueType)
+		line, err := decoder.getCSVRow()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		if err := setField(key, line[0], false); err != nil {
+			return err
+		}
+		if err := setField(value, line[1], false); err != nil {
+			return err
+		}
+		outValue.SetMapIndex(key.Elem(), value.Elem())
+	}
+	return nil
+}
+
 // UnmarshalToChan parses the CSV from the reader and send each value in the chan c.
 // The channel must have a concrete type.
 func UnmarshalToChan(in io.Reader, c interface{}) error {

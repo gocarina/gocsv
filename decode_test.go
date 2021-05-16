@@ -901,3 +901,26 @@ func TestDecodeDefaultValues(t *testing.T) {
 		t.Fatalf("expected second sample %v, got %v", expected, out[0])
 	}
 }
+
+func TestUnmarshalCSVToMap(t *testing.T) {
+	b := []byte(`line	tokens
+10	["PRINT", "\"Hello map!\""]
+20	["GOTO", "10"]`)
+	r := bytes.NewReader(b)
+	csvReader := csv.NewReader(r)
+	csvReader.LazyQuotes = true
+	csvReader.Comma = '\t'
+
+	var sample map[int][]string
+	if err := UnmarshalCSVToMap(csvReader, &sample); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := map[int][]string{
+		10: {"PRINT", "\"Hello map!\""},
+		20: {"GOTO", "10"},
+	}
+	if !reflect.DeepEqual(expected, sample) {
+		t.Fatalf("expected %v, got %v", expected, sample)
+	}
+}
