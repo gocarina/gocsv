@@ -924,3 +924,32 @@ func TestUnmarshalCSVToMap(t *testing.T) {
 		t.Fatalf("expected %v, got %v", expected, sample)
 	}
 }
+
+func BenchmarkCSVToMap(b *testing.B) {
+	bufstring := bytes.NewBufferString(`foo,BAR
+4,Jose
+2,Daniel
+5,Vincent`)
+	for n := 0; n < b.N; n++ {
+		_, err := CSVToMap(bytes.NewReader(bufstring.Bytes()))
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkUnmarshalCSVToMap(b *testing.B) {
+	bufstring := []byte(`foo,BAR
+4,Jose
+2,Daniel
+5,Vincent`)
+	for n := 0; n < b.N; n++ {
+		var sample map[string]string
+		r := bytes.NewReader(bufstring)
+		d := csv.NewReader(r)
+		err := UnmarshalCSVToMap(d, &sample)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
