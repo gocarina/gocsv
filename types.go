@@ -123,7 +123,12 @@ func toInt(in interface{}) (int64, error) {
 			return 0, nil
 		}
 		out := strings.SplitN(s, ".", 2)
-		return strconv.ParseInt(out[0], 0, 64)
+
+		//Only call ParseInt with base 0 for items starting with 2 character base encoding,  ea 0001239  needs to be equal to 1239 and not and error on base 8 encoding
+		if len(out[0]) > 1 && (strings.EqualFold(out[0][:2], "0b") || strings.EqualFold(out[0][:2], "0x") || strings.EqualFold(out[0][:2], "0o")) {
+			return strconv.ParseInt(out[0], 0, 64)
+		}
+		return strconv.ParseInt(out[0], 10, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
@@ -308,9 +313,8 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 		case bool:
 			if field.Bool() {
 				return "true", nil
-			} else {
-				return "false", nil
 			}
+			return "false", nil
 		case int, int8, int16, int32, int64:
 			return fmt.Sprintf("%v", field.Int()), nil
 		case uint, uint8, uint16, uint32, uint64:

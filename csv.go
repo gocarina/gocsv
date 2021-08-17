@@ -41,6 +41,7 @@ var TagSeparator = ","
 // or convert '-' to '_'.
 type Normalizer func(string) string
 
+//ErrorHandler don't really get the purpose
 type ErrorHandler func(*csv.ParseError) bool
 
 // normalizeName function initially set to a nop Normalizer.
@@ -171,7 +172,7 @@ func UnmarshalFile(in *os.File, out interface{}) error {
 	return Unmarshal(in, out)
 }
 
-// UnmarshalFile parses the CSV from the file in the interface.
+// UnmarshalFileWithErrorHandler parses the CSV from the file in the interface.
 func UnmarshalFileWithErrorHandler(in *os.File, errHandler ErrorHandler, out interface{}) error {
 	return UnmarshalWithErrorHandler(in, errHandler, out)
 }
@@ -191,7 +192,7 @@ func Unmarshal(in io.Reader, out interface{}) error {
 	return readTo(newSimpleDecoderFromReader(in), out)
 }
 
-// Unmarshal parses the CSV from the reader in the interface.
+// UnmarshalWithErrorHandler parses the CSV from the reader in the interface.
 func UnmarshalWithErrorHandler(in io.Reader, errHandle ErrorHandler, out interface{}) error {
 	return readToWithErrorHandler(newSimpleDecoderFromReader(in), errHandle, out)
 }
@@ -366,7 +367,7 @@ func UnmarshalStringToCallback(in string, c interface{}) (err error) {
 // If func returns error, it will stop processing, drain the
 // parser and propagate the error to caller.
 //
-// The func must look like func(Struct) error.
+//UnmarshalToCallbackWithError The func must look like func(Struct) error.
 func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
 	valueFunc := reflect.ValueOf(f)
 	t := reflect.TypeOf(f)
@@ -377,7 +378,7 @@ func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
 		return fmt.Errorf("the given function must have exactly one return value")
 	}
 	if !isErrorType(t.Out(0)) {
-		return fmt.Errorf("the given function must only return error.")
+		return fmt.Errorf("the given function must only return error")
 	}
 
 	cerr := make(chan error)
@@ -398,7 +399,7 @@ func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
 		}
 		v, notClosed := c.Recv()
 		if !notClosed || v.Interface() == nil {
-			if err := <- cerr; err != nil {
+			if err := <-cerr; err != nil {
 				fErr = err
 			}
 			break

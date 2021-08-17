@@ -19,6 +19,7 @@ type SimpleDecoder interface {
 	getCSVRows() ([][]string, error)
 }
 
+//CSVReader interface for a csv reader
 type CSVReader interface {
 	Read() ([]string, error)
 	ReadAll() ([][]string, error)
@@ -33,7 +34,10 @@ func newSimpleDecoderFromReader(r io.Reader) SimpleDecoder {
 }
 
 var (
+	//ErrEmptyCSVFile error returned for empty csv files
 	ErrEmptyCSVFile = errors.New("empty csv file given")
+
+	//ErrNoStructTags error returned for struct with no csv tags
 	ErrNoStructTags = errors.New("no csv struct tags found")
 )
 
