@@ -902,6 +902,27 @@ func TestDecodeDefaultValues(t *testing.T) {
 	}
 }
 
+func TestTrimTagWhitespace(t *testing.T) {
+	type whiteSpaceOptionStruct struct {
+		Foo *string `csv:"foo, omitempty"`
+		Bar int     `csv:"bar, default=13 "`
+	}
+	var out []whiteSpaceOptionStruct
+	b := bytes.NewBufferString(`foo,bar
+,`)
+	if err := Unmarshal(b, &out); err != nil {
+		t.Fatal(err)
+	}
+	expected := whiteSpaceOptionStruct{
+		Foo: nil,
+		Bar: 13,
+	}
+
+	if !reflect.DeepEqual(expected, out[0]) {
+		t.Fatalf("expected sample %v, got %v", expected, out[0])
+	}
+}
+
 func TestUnmarshalCSVToMap(t *testing.T) {
 	b := []byte(`line	tokens
 10	["PRINT", "\"Hello map!\""]
