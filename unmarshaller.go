@@ -14,6 +14,7 @@ type Unmarshaller struct {
 	MismatchedHeaders      []string
 	MismatchedStructFields []string
 	outType                reflect.Type
+	out                    interface{}
 }
 
 // NewUnmarshaller creates an unmarshaller from a csv.Reader and a struct.
@@ -90,6 +91,7 @@ func validate(um *Unmarshaller, s interface{}, headers []string) error {
 	um.fieldInfoMap = csvHeadersLabels
 	um.MismatchedHeaders = mismatchHeaderFields(structInfo.Fields, headers)
 	um.MismatchedStructFields = mismatchStructFields(structInfo.Fields, headers)
+	um.out = s
 	return nil
 }
 
@@ -114,4 +116,19 @@ func (um *Unmarshaller) unmarshalRow(row []string, unmatched map[string]string) 
 		}
 	}
 	return outValue.Interface(), nil
+}
+
+// RenormalizeHeaders will remap the header names based on the headerNormalizer.
+// This can be used to map a CSV to a struct where the CSV header names do not match in the file but a mapping is known
+func (um *Unmarshaller) RenormalizeHeaders(headerNormalizer func([]string) []string) error {
+	headers := um.Headers
+	if headerNormalizer != nil {
+		headers = headerNormalizer(headers)
+	}
+	err := validate(um, um.out, headers)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
