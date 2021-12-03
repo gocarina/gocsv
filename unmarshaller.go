@@ -118,6 +118,8 @@ func (um *Unmarshaller) unmarshalRow(row []string, unmatched map[string]string) 
 	return outValue.Interface(), nil
 }
 
+// RenormalizeHeaders will remap the header names based on the headerNormalizer.
+// This can be used to map a CSV to a struct where the CSV header names do not match in the file but a mapping is known
 func (um *Unmarshaller) RenormalizeHeaders(headerNormalizer func([]string) []string) error {
 	headers := um.Headers
 	if headerNormalizer != nil {
