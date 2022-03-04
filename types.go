@@ -182,6 +182,7 @@ func toFloat(in interface{}) (float64, error) {
 		if s == "" {
 			return 0, nil
 		}
+		strings.Replace(s, ",", ".", -1)
 		return strconv.ParseFloat(s, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
