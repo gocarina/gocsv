@@ -10,13 +10,13 @@ import (
 
 // Decoder .
 type Decoder interface {
-	getCSVRows() ([][]string, error)
+	GetCSVRows() ([][]string, error)
 }
 
 // SimpleDecoder .
 type SimpleDecoder interface {
-	getCSVRow() ([]string, error)
-	getCSVRows() ([][]string, error)
+	GetCSVRow() ([]string, error)
+	GetCSVRows() ([][]string, error)
 }
 
 type CSVReader interface {
@@ -45,11 +45,11 @@ func NewSimpleDecoderFromCSVReader(r CSVReader) SimpleDecoder {
 	return csvDecoder{r}
 }
 
-func (c csvDecoder) getCSVRows() ([][]string, error) {
+func (c csvDecoder) GetCSVRows() ([][]string, error) {
 	return c.ReadAll()
 }
 
-func (c csvDecoder) getCSVRow() ([]string, error) {
+func (c csvDecoder) GetCSVRow() ([]string, error) {
 	return c.Read()
 }
 
@@ -142,7 +142,7 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	csvRows, err := decoder.getCSVRows() // Get the CSV csvRows
+	csvRows, err := decoder.GetCSVRows() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	}
 	defer outValue.Close()
 
-	headers, err := decoder.getCSVRow()
+	headers, err := decoder.GetCSVRow()
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	}
 	i := 0
 	for {
-		line, err := decoder.getCSVRow()
+		line, err := decoder.GetCSVRow()
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -322,7 +322,7 @@ func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
 
 	i := 0
 	for {
-		line, err := decoder.getCSVRow()
+		line, err := decoder.GetCSVRow()
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -354,7 +354,7 @@ func readToWithoutHeaders(decoder Decoder, out interface{}) error {
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	csvRows, err := decoder.getCSVRows() // Get the CSV csvRows
+	csvRows, err := decoder.GetCSVRows() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
