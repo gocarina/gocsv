@@ -14,7 +14,7 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func writeFromChan(writer CSVWriter, c <-chan interface{}) error {
+func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool) error {
 	// Get the first value. It wil determine the header structure.
 	firstValue, ok := <-c
 	if !ok {
@@ -30,8 +30,10 @@ func writeFromChan(writer CSVWriter, c <-chan interface{}) error {
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
-	if err := writer.Write(csvHeadersLabels); err != nil {
-		return err
+	if !omitHeaders {
+		if err := writer.Write(csvHeadersLabels); err != nil {
+			return err
+		}
 	}
 	write := func(val reflect.Value) error {
 		for j, fieldInfo := range inInnerStructInfo.Fields {
