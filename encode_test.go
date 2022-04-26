@@ -125,6 +125,38 @@ func Test_writeTo_multipleTags(t *testing.T) {
 	assertLine(t, []string{"def", "234"}, lines[2])
 }
 
+func Test_writeTo_slice_structs(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []SliceStructSample{
+		{
+			Slice: []SliceStruct{
+				{String: "s1", Float: 1.1},
+				{String: "s2", Float: 2.2},
+				{String: "nope", Float: 3.3},
+			},
+			SimpleSlice: []int{1, 2, 3, 4, 5},
+			Array: [2]SliceStruct{
+				{String: "s3", Float: 3.3},
+				{String: "s4", Float: 4.4},
+			},
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"s[0].s", "s[0].f", "s[1].s", "s[1].f", "ints[0]", "ints[1]", "ints[2]", "a[0].s", "a[0].f", "a[1].s", "a[1].f"}, lines[0])
+	assertLine(t, []string{"s1", "1.1", "s2", "2.2", "1", "2", "3", "s3", "3.3", "s4", "4.4"}, lines[1])
+}
+
 func Test_writeTo_embed(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
