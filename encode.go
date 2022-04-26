@@ -140,6 +140,21 @@ func getInnerField(outInner reflect.Value, outInnerWasPointer bool, index []int)
 		}
 		oi = outInner.Elem()
 	}
+
+	if oi.Kind() == reflect.Slice || oi.Kind() == reflect.Array {
+		i := index[0]
+
+		if i >= oi.Len() {
+			return "", nil
+		}
+
+		item := oi.Index(i)
+		if len(index) > 1 {
+			return getInnerField(item, false, index[1:])
+		}
+		return getFieldAsString(item)
+	}
+
 	// because pointers can be nil need to recurse one index at a time and perform nil check
 	if len(index) > 1 {
 		nextField := oi.Field(index[0])

@@ -16,6 +16,17 @@ type SliceSample struct {
 	Slice []int `csv:"Slice"`
 }
 
+type SliceStructSample struct {
+	Slice       []SliceStruct  `csv:"s,slice" csv[]:"2"`
+	SimpleSlice []int          `csv:"ints" csv[]:"3"`
+	Array       [2]SliceStruct `csv:"a,array" csv[]:"2"`
+}
+
+type SliceStruct struct {
+	String string  `csv:"s,string"`
+	Float  float64 `csv:"f,float"`
+}
+
 type EmbedSample struct {
 	Qux string `csv:"first"`
 	Sample
