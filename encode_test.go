@@ -449,3 +449,45 @@ func Benchmark_MarshalCSVWithoutHeaders(b *testing.B) {
 		}
 	}
 }
+
+func Test_writeTo_nested_struct(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []NestedSample{
+		{
+			Inner1: InnerStruct{
+				BoolIgnoreField0: false,
+				BoolField1:       false,
+				StringField2:     "email_one",
+			},
+			Inner2: InnerStruct{
+				BoolIgnoreField0: true,
+				BoolField1:       true,
+				StringField2:     "email_two",
+			},
+			InnerIgnore: InnerStruct{
+				BoolIgnoreField0: true,
+				BoolField1:       false,
+				StringField2:     "email_ignore",
+			},
+			Inner3: NestedEmbedSample{InnerStruct{
+				BoolIgnoreField0: true,
+				BoolField1:       false,
+				StringField2:     "email_three",
+			}},
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"one.boolField1", "one.stringField2", "two.boolField1", "two.stringField2", "three.boolField1", "three.stringField2"}, lines[0])
+	assertLine(t, []string{"false", "email_one", "true", "email_two", "false", "email_three"}, lines[1])
+}

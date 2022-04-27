@@ -94,11 +94,11 @@ type DateTime struct {
 }
 
 type Level0Struct struct {
-	Level0Field level1Struct `csv:"-"`
+	Level0Field level1Struct
 }
 
 type level1Struct struct {
-	Level1Field level2Struct `csv:"-"`
+	Level1Field level2Struct
 }
 
 type level2Struct struct {
@@ -118,4 +118,14 @@ type UnmarshalCSVWithFieldsSample struct {
 	Bar  int     `csv:"bar"`
 	Baz  string  `csv:"baz"`
 	Frop float64 `csv:"frop"`
+}
+
+type NestedSample struct {
+	Inner1      InnerStruct       `csv:"one"`
+	Inner2      InnerStruct       `csv:"two"`
+	InnerIgnore InnerStruct       `csv:"-"`
+	Inner3      NestedEmbedSample `csv:"three"`
+}
+type NestedEmbedSample struct {
+	InnerStruct
 }
