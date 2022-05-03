@@ -454,6 +454,31 @@ func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int
 		}
 		oi = outInner.Elem()
 	}
+
+	if oi.Kind() == reflect.Slice || oi.Kind() == reflect.Array {
+		i := index[0]
+
+		// grow slice when needed
+		if i >= oi.Cap() {
+			newcap := oi.Cap() + oi.Cap()/2
+			if newcap < 4 {
+				newcap = 4
+			}
+			newoi := reflect.MakeSlice(oi.Type(), oi.Len(), newcap)
+			reflect.Copy(newoi, oi)
+			oi.Set(newoi)
+		}
+		if i >= oi.Len() {
+			oi.SetLen(i + 1)
+		}
+
+		item := oi.Index(i)
+		if len(index) > 1 {
+			return setInnerField(&item, false, index[1:], value, omitEmpty)
+		}
+		return setField(item, value, omitEmpty)
+	}
+
 	// because pointers can be nil need to recurse one index at a time and perform nil check
 	if len(index) > 1 {
 		nextField := oi.Field(index[0])
