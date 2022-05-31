@@ -320,7 +320,13 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 		if !notClosed || v.Interface() == nil {
 			break
 		}
-		valueFunc.Call([]reflect.Value{v})
+		callResults := valueFunc.Call([]reflect.Value{v})
+		// if last returned value from Call() is an error, return it
+		if len(callResults) > 0 {
+			if err, ok := callResults[len(callResults)-1].Interface().(error); ok {
+				return err
+			}
+		}
 	}
 	return nil
 }
