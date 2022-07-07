@@ -71,7 +71,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
 			// unless it implements marshalText or marshalCSV. Structs that implement this
 			// should result in one value and not have their fields exposed
-			if !(canMarshal(field.Type.Elem())) {
+			if !(canMarshal(field.Type.Elem()) || canMarshal(field.Type)) {
 				fieldsList = append(fieldsList, getFieldInfos(field.Type.Elem(), indexChain)...)
 			}
 		}
