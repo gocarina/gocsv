@@ -1,6 +1,9 @@
 package gocsv
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Sample struct {
 	Foo  string  `csv:"foo"`
@@ -49,6 +52,24 @@ func (m *MarshalSample) UnmarshalText(text []byte) error {
 
 type EmbedMarshal struct {
 	Foo *MarshalSample `csv:"foo"`
+}
+
+type MarshalCSVSample struct {
+	Seconds int64
+	Nanos   int32
+}
+
+func (timestamp *MarshalCSVSample) MarshalCSV() (string, error) {
+	if timestamp == nil {
+		return "", nil
+	}
+
+	return fmt.Sprintf("%d%09d", timestamp.Seconds, timestamp.Nanos), nil
+}
+
+type EmbedMarshalCSV struct {
+	Symbol    string            `csv:"symbol"`
+	Timestamp *MarshalCSVSample `csv:"timestamp"`
 }
 
 type EmbedPtrSample struct {
