@@ -332,9 +332,7 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 			}
 		default:
 			// Not a native type, check for marshal method
-			fmt.Printf("Calling marshal, Type: %s, CanInterface: %t\n", field.Kind(), field.CanInterface())
 			str, err = marshall(field)
-			fmt.Printf("After marshal: %s\n", str)
 			if err != nil {
 				if _, ok := err.(NoMarshalFuncError); !ok {
 					return str, err
