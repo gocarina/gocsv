@@ -35,10 +35,6 @@ var TagName = "csv"
 // TagSeparator defines seperator string for multiple csv tags in struct fields
 var TagSeparator = ","
 
-// SecondayComma shall be used when marshalling/unmarshalling slices and lists
-// of primitives for which the appropriate tags have not been defined
-var SecondaryComma = ";"
-
 // Normalizer is a function that takes and returns a string. It is applied to
 // struct and header field values before they are compared. It can be used to alter
 // names for comparison. For instance, you could allow case insensitive matching
