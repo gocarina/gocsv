@@ -125,6 +125,44 @@ func Test_writeTo_multipleTags(t *testing.T) {
 	assertLine(t, []string{"def", "234"}, lines[2])
 }
 
+func Test_writeTo_slice(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+
+	type TestType struct {
+		Key   string
+		Items []int
+	}
+
+	s := []TestType{
+		{
+			Key:   "test1",
+			Items: []int{1, 2, 3},
+		},
+		{
+			Key:   "test2",
+			Items: []int{4, 5, 6},
+		},
+	}
+
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 lines, got %d", len(lines))
+	}
+
+	assertLine(t, []string{"Key", "Items"}, lines[0])
+	assertLine(t, []string{"test1", "[1,2,3]"}, lines[1])
+	assertLine(t, []string{"test2", "[4,5,6]"}, lines[2])
+}
+
 func Test_writeTo_slice_structs(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}

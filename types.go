@@ -366,6 +366,15 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 					if err != nil {
 						return str, err
 					}
+				case reflect.Slice:
+					fallthrough
+				case reflect.Array:
+					b, err := json.Marshal(field.Addr().Interface())
+					if err != nil {
+						return str, err
+					}
+
+					str = string(b)
 				}
 			} else {
 				return str, nil

@@ -73,7 +73,7 @@ func TestUnmarshalListOfStructsAfterMarshal(t *testing.T) {
 		t.Fatalf("Error marshalling data to CSV: %#v", err)
 	}
 
-	if string(buffer.Bytes()) != "Additional|Key\n|test\n" {
+	if string(buffer.Bytes()) != "Additional|Key\nnull|test\n" {
 		t.Fatalf("Marshalled data had an unexpected form of %s", buffer.Bytes())
 	}
 
