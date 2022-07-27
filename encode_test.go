@@ -3,6 +3,7 @@ package gocsv
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"io"
 	"io/ioutil"
 	"math"
@@ -438,6 +439,17 @@ func Test_writeToChan(t *testing.T) {
 			continue
 		}
 		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string", ""}, l)
+	}
+}
+
+func Test_MarshalChan_ClosedChannel(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	c := make(chan interface{})
+	close(c)
+
+	if err := MarshalChan(c, NewSafeCSVWriter(csv.NewWriter(e.out))); !errors.Is(err, ErrChannelIsClosed) {
+		t.Fatal(err)
 	}
 }
 

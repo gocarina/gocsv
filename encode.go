@@ -1,9 +1,14 @@
 package gocsv
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
+)
+
+var (
+	ErrChannelIsClosed = errors.New("channel is closed")
 )
 
 type encoder struct {
@@ -18,7 +23,7 @@ func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool) err
 	// Get the first value. It wil determine the header structure.
 	firstValue, ok := <-c
 	if !ok {
-		return fmt.Errorf("channel is closed")
+		return ErrChannelIsClosed
 	}
 	inValue, inType := getConcreteReflectValueAndType(firstValue) // Get the concrete type
 	if err := ensureStructOrPtr(inType); err != nil {
