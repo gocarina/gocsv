@@ -64,7 +64,7 @@ func (timestamp *MarshalCSVSample) MarshalCSV() (string, error) {
 		return "", nil
 	}
 
-	return fmt.Sprintf("%d%09d", timestamp.Seconds, timestamp.Nanos), nil
+	return fmt.Sprintf("%d.%09d", timestamp.Seconds, timestamp.Nanos), nil
 }
 
 type EmbedMarshalCSV struct {
