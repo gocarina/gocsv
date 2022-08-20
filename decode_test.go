@@ -268,6 +268,23 @@ bar`)
 	}
 }
 
+func Test_readTo_embed_unmarshal_csv_with_clashing_field(t *testing.T) {
+	b := bytes.NewBufferString(`Symbol,Timestamp
+test,1656460798.693201614`)
+	d := newSimpleDecoderFromReader(b)
+	var rows []EmbedUnmarshalCSVWithClashingField
+	if err := readTo(d, &rows); err != nil {
+		t.Fatalf(err.Error())
+	}
+	expected := EmbedUnmarshalCSVWithClashingField{
+		Symbol:    "test",
+		Timestamp: &UnmarshalCSVSample{Timestamp: 1656460798, Nanos: 693201614},
+	}
+	if !reflect.DeepEqual(expected, rows[0]) {
+		t.Fatalf("expected first sample %v, got %+v", expected, rows[0])
+	}
+}
+
 func Test_readEach(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
