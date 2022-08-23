@@ -64,12 +64,33 @@ func (timestamp *MarshalCSVSample) MarshalCSV() (string, error) {
 		return "", nil
 	}
 
-	return fmt.Sprintf("%d%09d", timestamp.Seconds, timestamp.Nanos), nil
+	return fmt.Sprintf("%d.%09d", timestamp.Seconds, timestamp.Nanos), nil
 }
 
 type EmbedMarshalCSV struct {
 	Symbol    string            `csv:"symbol"`
 	Timestamp *MarshalCSVSample `csv:"timestamp"`
+}
+
+type UnmarshalCSVSample struct {
+	Timestamp int64
+	Nanos     int32
+}
+
+func (timestamp *UnmarshalCSVSample) UnmarshalCSV(s string) error {
+	ret := UnmarshalCSVSample{}
+	_, err := fmt.Sscanf(s, "%d.%09d", &ret.Timestamp, &ret.Nanos)
+	*timestamp = ret
+	return err
+}
+
+type EmbedUnmarshalCSVWithClashingField struct {
+	Symbol string
+
+	// Clashes on purpose with UnmarshalCSVSample's Timestamp field. Since
+	// *UnmarshalCSVSample implements UnmarshalCSV(), that method call should
+	// take precedence.
+	Timestamp *UnmarshalCSVSample
 }
 
 type EmbedPtrSample struct {

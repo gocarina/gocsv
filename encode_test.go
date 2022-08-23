@@ -331,7 +331,7 @@ func Test_writeTo_embedmarshalCSV(t *testing.T) {
 	}
 
 	assertLine(t, []string{"symbol", "timestamp"}, lines[0])
-	assertLine(t, []string{"test", "1656460798693201614"}, lines[1])
+	assertLine(t, []string{"test", "1656460798.693201614"}, lines[1])
 }
 
 func Test_writeTo_complex_embed(t *testing.T) {
