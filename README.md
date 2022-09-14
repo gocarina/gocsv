@@ -152,7 +152,7 @@ func main() {
 
         ...
 
-        gocsv.SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
+        gocsv.SetCSVWriter(func(out io.Writer) *gocsv.SafeCSVWriter {
             writer := csv.NewWriter(out)
             writer.Comma = '|'
             return gocsv.NewSafeCSVWriter(writer)
