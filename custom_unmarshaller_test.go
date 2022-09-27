@@ -48,18 +48,29 @@ func Test_CSV_Base(t *testing.T) {
 type FieldWithCustomMarshaller struct {
 	value string
 }
-type TestStruct struct {
-	OkValue                   string
-	FieldWithCustomMarshaller FieldWithCustomMarshaller
-}
 
 func (f *FieldWithCustomMarshaller) UnmarshalCSV(csv string) (err error) {
 	f.value = csv
 	return err
 }
 
+type FieldWithCustomMarshallerPointed struct {
+	otherValue string
+}
+
+func (f *FieldWithCustomMarshallerPointed) UnmarshalCSV(csv string) (err error) {
+	f.otherValue = csv
+	return err
+}
+
+type TestStruct struct {
+	OkValue                          string
+	FieldWithCustomMarshaller        FieldWithCustomMarshaller
+	FieldWithCustomMarshallerPointed *FieldWithCustomMarshallerPointed
+}
+
 func TestPanic(t *testing.T) {
-	line := "hello,world"
+	line := "make,backups,test it"
 	r := strings.NewReader(line)
 	var DataValues []TestStruct
 	err := UnmarshalWithoutHeaders(r, &DataValues)

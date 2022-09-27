@@ -136,11 +136,11 @@ type DateTime struct {
 }
 
 type Level0Struct struct {
-	Level0Field level1Struct `csv:"-"`
+	Level0Field level1Struct
 }
 
 type level1Struct struct {
-	Level1Field level2Struct `csv:"-"`
+	Level1Field level2Struct
 }
 
 type level2Struct struct {
