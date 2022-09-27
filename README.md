@@ -41,11 +41,16 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
+type NotUsed struct {
+	Name string
+}
+
 type Client struct { // Our example struct, you can use "-" to ignore a field
-	Id      string `csv:"client_id"`
-	Name    string `csv:"client_name"`
-	Age     string `csv:"client_age"`
-	NotUsed string `csv:"-"`
+	Id            string `csv:"client_id"`
+	Name          string `csv:"client_name"`
+	Age           string `csv:"client_age"`
+	NotUsedString string `csv:"-"`
+	NotUsedStruct NotUsed `csv:"-"` 
 }
 
 func main() {
