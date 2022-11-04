@@ -161,3 +161,13 @@ type UnmarshalCSVWithFieldsSample struct {
 	Baz  string  `csv:"baz"`
 	Frop float64 `csv:"frop"`
 }
+
+type NestedSample struct {
+	Inner1      InnerStruct       `csv:"one"`
+	Inner2      InnerStruct       `csv:"two"`
+	InnerIgnore InnerStruct       `csv:"-"`
+	Inner3      NestedEmbedSample `csv:"three"`
+}
+type NestedEmbedSample struct {
+	InnerStruct
+}
