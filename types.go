@@ -13,6 +13,13 @@ import (
 // --------------------------------------------------------------------------
 // Conversion interfaces
 
+var (
+	marshalerType              = reflect.TypeOf(new(TypeMarshaller)).Elem()
+	textMarshalerType          = reflect.TypeOf(new(encoding.TextMarshaler)).Elem()
+	unmarshalerType            = reflect.TypeOf(new(TypeUnmarshaller)).Elem()
+	unmarshalCSVWithFieldsType = reflect.TypeOf(new(TypeUnmarshalCSVWithFields)).Elem()
+)
+
 // TypeMarshaller is implemented by any value that has a MarshalCSV method
 // This converter is used to convert the value to it string representation
 type TypeMarshaller interface {
@@ -388,13 +395,23 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 // Un/serializations helpers
 
 func canMarshal(t reflect.Type) bool {
-	// Structs that implement any of the text or CSV marshaling methods
-	// should result in one value and not have their fields exposed
-	_, canMarshalText := t.MethodByName("MarshalText")
-	_, canMarshalCSV := t.MethodByName("MarshalCSV")
-	_, canUnmarshalText := t.MethodByName("UnmarshalText")
-	_, canUnmarshalCSV := t.MethodByName("UnmarshalCSV")
-	return canMarshalCSV || canMarshalText || canUnmarshalText || canUnmarshalCSV
+	// Struct that implements any of the text or CSV marshaling interfaces
+	if t.Implements(marshalerType) ||
+		t.Implements(textMarshalerType) ||
+		t.Implements(unmarshalerType) ||
+		t.Implements(unmarshalCSVWithFieldsType) {
+		return true
+	}
+
+	// Pointer to a struct that implements any of the text or CSV marshaling interfaces
+	t = reflect.PtrTo(t)
+	if t.Implements(marshalerType) ||
+		t.Implements(textMarshalerType) ||
+		t.Implements(unmarshalerType) ||
+		t.Implements(unmarshalCSVWithFieldsType) {
+		return true
+	}
+	return false
 }
 
 func unmarshall(field reflect.Value, value string) error {

@@ -1019,3 +1019,39 @@ func BenchmarkUnmarshalCSVToMap(b *testing.B) {
 		}
 	}
 }
+
+func Test_readTo_nested_struct(t *testing.T) {
+	b := bytes.NewBufferString(`one.boolField1,one.stringField2,two.boolField1,two.stringField2,three.boolField1,three.stringField2
+false,email_one,true,email_two,false,email_three`)
+	d := newSimpleDecoderFromReader(b)
+
+	var samples []NestedSample
+	err := readTo(d, &samples)
+	if err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+
+	expected := []NestedSample{
+		{
+			Inner1: InnerStruct{
+				BoolIgnoreField0: false,
+				BoolField1:       false,
+				StringField2:     "email_one",
+			},
+			Inner2: InnerStruct{
+				BoolIgnoreField0: false,
+				BoolField1:       true,
+				StringField2:     "email_two",
+			},
+			Inner3: NestedEmbedSample{InnerStruct{
+				BoolIgnoreField0: false,
+				BoolField1:       false,
+				StringField2:     "email_three",
+			}},
+		},
+	}
+
+	if !reflect.DeepEqual(expected, samples) {
+		t.Fatalf("expected \n  sample: %v\n     got: %v", expected, samples)
+	}
+}

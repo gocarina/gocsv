@@ -48,14 +48,14 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		return stInfo.(*structInfo)
 	}
 
-	fieldsList := getFieldInfos(rType, []int{})
+	fieldsList := getFieldInfos(rType, []int{}, []string{})
 	stInfo = &structInfo{fieldsList}
 	structInfoCache.Store(rType, stInfo)
 
 	return stInfo.(*structInfo)
 }
 
-func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
+func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string) []fieldInfo {
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -68,61 +68,57 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 		copy(cpy, parentIndexChain)
 		indexChain := append(cpy, i)
 
-		currFieldInfo, filteredTags := filterTags(TagName, indexChain, field)
+		var currFieldInfo *fieldInfo
+		if !field.Anonymous {
+			filteredTags := []string{}
+			currFieldInfo, filteredTags = filterTags(TagName, indexChain, field)
 
-		if len(filteredTags) == 1 && filteredTags[0] == "-" {
-			continue
-		}
+			if len(filteredTags) == 1 && filteredTags[0] == "-" {
+				// ignore nested structs with - tag
+				continue
+			} else if len(filteredTags) > 0 && filteredTags[0] != "" {
+				currFieldInfo.keys = filteredTags
+			} else {
+				currFieldInfo.keys = []string{normalizeName(field.Name)}
+			}
 
-		// if the field is a pointer to a struct, follow the pointer then create fieldinfo for each field
-		if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
-			// Structs that implement any of the text or CSV marshaling methods
-			// should result in one value and not have their fields exposed
-			if !(canMarshal(field.Type.Elem()) || canMarshal(field.Type)) {
-				fieldsList = append(fieldsList, getFieldInfos(field.Type.Elem(), indexChain)...)
-				value := reflect.New(field.Type.Elem())
-				switch value.Interface().(type) {
-				case TypeUnmarshaller:
-				case TypeUnmarshalCSVWithFields:
-				default:
-					if len(filteredTags) > 0 && filteredTags[0] == "" {
-						filteredTags[0] = "-"
+			if len(parentKeys) > 0 && currFieldInfo != nil && !canMarshal(field.Type) {
+				// create cartesian product of keys
+				// eg: parent keys x field keys
+				keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
+				for _, pkey := range parentKeys {
+					for _, ckey := range currFieldInfo.keys {
+						keys = append(keys, normalizeName(fmt.Sprintf("%s.%s", pkey, ckey)))
 					}
 				}
+				currFieldInfo.keys = keys
 			}
 		}
+
+		// handle struct
+		fieldType := field.Type
+		// if the field is a pointer, follow the pointer
+		if fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+		}
 		// if the field is a struct, create a fieldInfo for each of its fields
-		if field.Type.Kind() == reflect.Struct {
+		if fieldType.Kind() == reflect.Struct {
 			// Structs that implement any of the text or CSV marshaling methods
 			// should result in one value and not have their fields exposed
-			if !(canMarshal(field.Type)) {
-				fieldsList = append(fieldsList, getFieldInfos(field.Type, indexChain)...)
-				value := reflect.New(field.Type)
-				switch value.Interface().(type) {
-				case TypeUnmarshaller:
-				case TypeUnmarshalCSVWithFields:
-				default:
-					if len(filteredTags) > 0 && filteredTags[0] == "" {
-						filteredTags[0] = "-"
-					}
+			if !(canMarshal(fieldType)) {
+				// if the field is an embedded struct, pass along parent keys
+				keys := parentKeys
+				if currFieldInfo != nil {
+					keys = currFieldInfo.keys
 				}
+				fieldsList = append(fieldsList, getFieldInfos(fieldType, indexChain, keys)...)
+				continue
 			}
 		}
 
 		// if the field is an embedded struct, ignore the csv tag
-		if field.Anonymous {
+		if currFieldInfo == nil {
 			continue
-		}
-		// if this is true, then we have a struct or a pointer to a struct and marshalled its fields.
-		// No further actions required.
-		if len(filteredTags) == 1 && filteredTags[0] == "-" {
-			continue
-		}
-
-		if len(filteredTags) > 0 && filteredTags[0] != "" {
-			currFieldInfo.keys = filteredTags
-		} else {
-			currFieldInfo.keys = []string{normalizeName(field.Name)}
 		}
 
 		if field.Type.Kind() == reflect.Slice || field.Type.Kind() == reflect.Array {
@@ -133,7 +129,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 
 			// When the field is a slice/array of structs, create a fieldInfo for each index and each field
 			if field.Type.Elem().Kind() == reflect.Struct {
-				fieldInfos := getFieldInfos(field.Type.Elem(), []int{})
+				fieldInfos := getFieldInfos(field.Type.Elem(), []int{}, []string{})
 
 				for idx := 0; idx < arrayLength; idx++ {
 					// copy index chain and append array index
@@ -182,16 +178,16 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int) []fieldInfo {
 					fieldsList = append(fieldsList, arrayFieldInfo)
 				}
 			} else {
-				fieldsList = append(fieldsList, currFieldInfo)
+				fieldsList = append(fieldsList, *currFieldInfo)
 			}
 		} else {
-			fieldsList = append(fieldsList, currFieldInfo)
+			fieldsList = append(fieldsList, *currFieldInfo)
 		}
 	}
 	return fieldsList
 }
 
-func filterTags(tagName string, indexChain []int, field reflect.StructField) (fieldInfo, []string) {
+func filterTags(tagName string, indexChain []int, field reflect.StructField) (*fieldInfo, []string) {
 	currFieldInfo := fieldInfo{IndexChain: indexChain}
 
 	fieldTag := field.Tag.Get(tagName)
@@ -209,7 +205,7 @@ func filterTags(tagName string, indexChain []int, field reflect.StructField) (fi
 		}
 	}
 
-	return currFieldInfo, filteredTags
+	return &currFieldInfo, filteredTags
 }
 
 func getConcreteContainerInnerType(in reflect.Type) (inInnerWasPointer bool, inInnerType reflect.Type) {
