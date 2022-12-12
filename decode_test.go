@@ -292,14 +292,25 @@ ff,gg,22,hh,ii,jj`)
 	d := newSimpleDecoderFromReader(b)
 
 	c := make(chan SkipFieldSample)
+	e := make(chan error)
 	var samples []SkipFieldSample
 	go func() {
 		if err := readEach(d, c); err != nil {
-			t.Fatal(err)
+			e <- err
 		}
 	}()
-	for v := range c {
-		samples = append(samples, v)
+L:
+	for {
+		select {
+		case err := <-e:
+			t.Fatal(err)
+		case v, ok := <-c:
+			if !ok {
+				break L
+			}
+			samples = append(samples, v)
+
+		}
 	}
 	if len(samples) != 2 {
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
@@ -344,14 +355,25 @@ e,3,b,,,,`)
 	d := newSimpleDecoderFromReader(b)
 
 	c := make(chan Sample)
+	e := make(chan error)
 	var samples []Sample
 	go func() {
 		if err := readEachWithoutHeaders(d, c); err != nil {
-			t.Fatal(err)
+			e <- err
 		}
 	}()
-	for v := range c {
-		samples = append(samples, v)
+L:
+	for {
+		select {
+		case err := <-e:
+			t.Fatal(err)
+		case v, ok := <-c:
+			if !ok {
+				break L
+			}
+			samples = append(samples, v)
+
+		}
 	}
 	if len(samples) != 2 {
 		t.Fatalf("expected 2 sample instances, got %d", len(samples))
@@ -455,13 +477,24 @@ e,3,b`)
 	d = newSimpleDecoderFromReader(b)
 	samples = samples[:0]
 	c := make(chan Sample)
+	e := make(chan error)
 	go func() {
 		if err := readEach(d, c); err != nil {
-			t.Fatal(err)
+			e <- err
 		}
 	}()
-	for v := range c {
-		samples = append(samples, v)
+L1:
+	for {
+		select {
+		case err := <-e:
+			t.Fatal(err)
+		case v, ok := <-c:
+			if !ok {
+				break L1
+			}
+			samples = append(samples, v)
+
+		}
 	}
 	// Double header allowed, value should be of third row
 	if samples[0].Foo != "baz" {
@@ -474,13 +507,24 @@ f,1,baz
 e,3,b`)
 	d = newSimpleDecoderFromReader(b)
 	c = make(chan Sample)
+	e = make(chan error)
 	go func() {
 		if err := readEach(d, c); err == nil {
-			t.Fatal("Double header not allowed but no error raised. Function called is readEach.")
+			e <- err
 		}
 	}()
-	for v := range c {
-		samples = append(samples, v)
+L2:
+	for {
+		select {
+		case <-e:
+			t.Fatal("Double header not allowed but no error raised. Function called is readEach.")
+		case v, ok := <-c:
+			if !ok {
+				break L2
+			}
+			samples = append(samples, v)
+
+		}
 	}
 }
 
