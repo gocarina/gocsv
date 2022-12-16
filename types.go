@@ -39,11 +39,11 @@ type TypeUnmarshalCSVWithFields interface {
 
 // NoUnmarshalFuncError is the custom error type to be raised in case there is no unmarshal function defined on type
 type NoUnmarshalFuncError struct {
-	msg string
+	t reflect.Type
 }
 
 func (e NoUnmarshalFuncError) Error() string {
-	return e.msg
+	return "No known conversion from string to " + e.t.Name() + ", it does not implement TypeUnmarshaller"
 }
 
 // NoMarshalFuncError is the custom error type to be raised in case there is no marshal function defined on type
@@ -432,7 +432,7 @@ func unmarshall(field reflect.Value, value string) error {
 			}
 		}
 
-		return NoUnmarshalFuncError{"No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implement TypeUnmarshaller"}
+		return NoUnmarshalFuncError{field.Type()}
 	}
 	for dupField.Kind() == reflect.Interface || dupField.Kind() == reflect.Ptr {
 		if dupField.IsNil() {
@@ -445,7 +445,7 @@ func unmarshall(field reflect.Value, value string) error {
 	if dupField.CanAddr() {
 		return unMarshallIt(dupField.Addr())
 	}
-	return NoUnmarshalFuncError{"No known conversion from string to " + field.Type().String() + ", " + field.Type().String() + " does not implement TypeUnmarshaller"}
+	return NoUnmarshalFuncError{field.Type()}
 }
 
 func marshall(field reflect.Value) (value string, err error) {
