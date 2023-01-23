@@ -991,6 +991,28 @@ func TestDecodeDefaultValues(t *testing.T) {
 	}
 }
 
+func TestDecodePartialKeys(t *testing.T) {
+	type defaultValueStruct struct {
+		Foo string `csv:"foo,partial"`
+		Bar int    `csv:"bar,partial"`
+	}
+	b := bytes.NewBufferString(`foolo,ambar
+x,42
+`)
+	var out []defaultValueStruct
+	if err := Unmarshal(b, &out); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := defaultValueStruct{
+		Foo: "x",
+		Bar: 42,
+	}
+	if !reflect.DeepEqual(expected, out[0]) {
+		t.Fatalf("expected second sample %v, got %v", expected, out[0])
+	}
+}
+
 func TestTrimTagWhitespace(t *testing.T) {
 	type whiteSpaceOptionStruct struct {
 		Foo *string `csv:"foo, omitempty"`
