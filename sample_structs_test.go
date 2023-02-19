@@ -154,10 +154,12 @@ type InnerStruct struct {
 }
 
 type InnerStruct3 struct {
+	Bar string
 	Foo time.Time
 }
 
 type InnerStruct2 struct {
+	Bar    string
 	Inner3 InnerStruct3
 }
 

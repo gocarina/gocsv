@@ -587,9 +587,10 @@ func Test_non_marshaling_nested_fields_are_prefixed(t *testing.T) {
 	s := []SameNameStruct{
 		SameNameStruct{
 			Inner2: &InnerStruct2{
-				Inner3: InnerStruct3{Foo: time1},
+				Bar:    "bar1",
+				Inner3: InnerStruct3{Bar: "bar2", Foo: time1},
 			},
-			Inner3: InnerStruct3{Foo: time2},
+			Inner3: InnerStruct3{Bar: "bar3", Foo: time2},
 			Foo:    time3,
 		},
 	}
@@ -603,6 +604,7 @@ func Test_non_marshaling_nested_fields_are_prefixed(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"Inner2.Inner3.Foo", "Inner3.Foo", "Foo"}, lines[0])
-	assertLine(t, []string{"2021-02-19T00:00:00Z", "2022-02-19T00:00:00Z", "2023-02-19T00:00:00Z"}, lines[1])
+	// The headers should contain the struct path prefixes even if struct is responsible for its marshalling like time.Time
+	assertLine(t, []string{"Inner2.Bar", "Inner2.Inner3.Bar", "Inner2.Inner3.Foo", "Inner3.Bar", "Inner3.Foo", "Foo"}, lines[0])
+	assertLine(t, []string{"bar1", "bar2", "2021-02-19T00:00:00Z", "bar3", "2022-02-19T00:00:00Z", "2023-02-19T00:00:00Z"}, lines[1])
 }
