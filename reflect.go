@@ -23,7 +23,7 @@ type fieldInfo struct {
 	omitEmpty    bool
 	IndexChain   []int
 	defaultValue string
-	partial	     bool
+	partial      bool
 }
 
 func (f fieldInfo) getFirstKey() string {
@@ -83,16 +83,25 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 				currFieldInfo.keys = []string{normalizeName(field.Name)}
 			}
 
-			if len(parentKeys) > 0 && currFieldInfo != nil && !canMarshal(field.Type) {
-				// create cartesian product of keys
-				// eg: parent keys x field keys
-				keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
-				for _, pkey := range parentKeys {
-					for _, ckey := range currFieldInfo.keys {
-						keys = append(keys, normalizeName(fmt.Sprintf("%s.%s", pkey, ckey)))
+			if len(parentKeys) > 0 && currFieldInfo != nil {
+
+				if !canMarshal(field.Type) {
+					// create cartesian product of keys
+					// eg: parent keys x field keys
+					keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
+					for _, pkey := range parentKeys {
+						for _, ckey := range currFieldInfo.keys {
+							keys = append(keys, normalizeName(fmt.Sprintf("%s.%s", pkey, ckey)))
+						}
+						currFieldInfo.keys = keys
+					}
+				} else {
+					keys := make([]string, 0, len(parentKeys))
+					for _, pkey := range parentKeys {
+						keys = append(keys, normalizeName(fmt.Sprintf("%s.%s", pkey, normalizeName(field.Name))))
+						currFieldInfo.keys = keys
 					}
 				}
-				currFieldInfo.keys = keys
 			}
 		}
 

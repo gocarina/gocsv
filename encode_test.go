@@ -576,3 +576,35 @@ func Test_writeTo_nested_struct(t *testing.T) {
 	assertLine(t, []string{"one.boolField1", "one.stringField2", "two.boolField1", "two.stringField2", "three.boolField1", "three.stringField2"}, lines[0])
 	assertLine(t, []string{"false", "email_one", "true", "email_two", "false", "email_three"}, lines[1])
 }
+
+func Test_non_marshaling_nested_fields_are_prefixed(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	time1 := time.Date(2021, 2, 19, 0, 0, 0, 0, time.UTC)
+	time2 := time.Date(2022, 2, 19, 0, 0, 0, 0, time.UTC)
+	time3 := time.Date(2023, 2, 19, 0, 0, 0, 0, time.UTC)
+
+	s := []SameNameStruct{
+		SameNameStruct{
+			Inner2: &InnerStruct2{
+				Bar:    "bar1",
+				Inner3: InnerStruct3{Bar: "bar2", Foo: time1},
+			},
+			Inner3: InnerStruct3{Bar: "bar3", Foo: time2},
+			Foo:    time3,
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	// The headers should contain the struct path prefixes even if struct is responsible for its marshalling like time.Time
+	assertLine(t, []string{"Inner2.Bar", "Inner2.Inner3.Bar", "Inner2.Inner3.Foo", "Inner3.Bar", "Inner3.Foo", "Foo"}, lines[0])
+	assertLine(t, []string{"bar1", "bar2", "2021-02-19T00:00:00Z", "bar3", "2022-02-19T00:00:00Z", "2023-02-19T00:00:00Z"}, lines[1])
+}

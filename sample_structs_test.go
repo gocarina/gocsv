@@ -153,6 +153,22 @@ type InnerStruct struct {
 	StringField2     string `csv:"stringField2"`
 }
 
+type InnerStruct3 struct {
+	Bar string
+	Foo time.Time
+}
+
+type InnerStruct2 struct {
+	Bar    string
+	Inner3 InnerStruct3
+}
+
+type SameNameStruct struct {
+	Inner2 *InnerStruct2
+	Inner3 InnerStruct3
+	Foo    time.Time
+}
+
 var _ TypeUnmarshalCSVWithFields = (*UnmarshalCSVWithFieldsSample)(nil)
 
 type UnmarshalCSVWithFieldsSample struct {
