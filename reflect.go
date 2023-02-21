@@ -91,14 +91,14 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 					keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
 					for _, pkey := range parentKeys {
 						for _, ckey := range currFieldInfo.keys {
-							keys = append(keys, normalizeName(fmt.Sprintf("%s.%s", pkey, ckey)))
+							keys = append(keys, normalizeName(fmt.Sprintf("%s%s%s", pkey, FieldsCombiner, ckey)))
 						}
 						currFieldInfo.keys = keys
 					}
 				} else {
 					keys := make([]string, 0, len(parentKeys))
 					for _, pkey := range parentKeys {
-						keys = append(keys, normalizeName(fmt.Sprintf("%s.%s", pkey, normalizeName(field.Name))))
+						keys = append(keys, normalizeName(fmt.Sprintf("%s%s%s", pkey, FieldsCombiner, normalizeName(field.Name))))
 						currFieldInfo.keys = keys
 					}
 				}
