@@ -32,11 +32,28 @@ func (f fieldInfo) getFirstKey() string {
 
 func (f fieldInfo) matchesKey(key string) bool {
 	for _, k := range f.keys {
-		if key == k || strings.TrimSpace(key) == k || (f.partial && strings.Contains(key, k)) {
+		if key == k || strings.TrimSpace(key) == k || (f.partial && strings.Contains(key, k)) || removeZeroWidthChars(key) == k {
 			return true
 		}
 	}
 	return false
+}
+
+// zwchs is Zero Width Characters map
+var zwchs = map[rune]struct{}{
+	'\u200B': {}, // zero width space (U+200B)
+	'\uFEFF': {}, // zero width no-break space (U+FEFF)
+	'\u200D': {}, // zero width joiner (U+200D)
+	'\u200C': {}, // zero width non-joiner (U+200C)
+}
+
+func removeZeroWidthChars(s string) string {
+	return strings.Map(func(r rune) rune {
+		if _, ok := zwchs[r]; ok {
+			return -1
+		}
+		return r
+	}, s)
 }
 
 var structInfoCache sync.Map
