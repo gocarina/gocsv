@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"reflect"
 )
 
@@ -127,6 +128,11 @@ func normalizeHeaders(headers []string) []string {
 		out[i] = normalizeName(h)
 	}
 	return out
+}
+
+// convertTo converts multipart file to io.Reader
+func convertTo(file *multipart.File) io.Reader {
+	return io.Reader(*file)
 }
 
 func readTo(decoder Decoder, out interface{}) error {

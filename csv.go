@@ -11,6 +11,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"os"
 	"reflect"
 	"strings"
@@ -186,6 +187,11 @@ func MarshalCSVWithoutHeaders(in interface{}, out CSVWriter) (err error) {
 // UnmarshalFile parses the CSV from the file in the interface.
 func UnmarshalFile(in *os.File, out interface{}) error {
 	return Unmarshal(in, out)
+}
+
+// UnmarshalMultipartFile parses the CSV from the multipart file in the interface.
+func UnmarshalMultipartFile(in *multipart.File, out interface{}) error {
+	return Unmarshal(convertTo(in), out)
 }
 
 // UnmarshalFile parses the CSV from the file in the interface.
