@@ -101,23 +101,14 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 			}
 
 			if len(parentKeys) > 0 && currFieldInfo != nil {
-
-				if !canMarshal(field.Type) {
-					// create cartesian product of keys
-					// eg: parent keys x field keys
-					keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
-					for _, pkey := range parentKeys {
-						for _, ckey := range currFieldInfo.keys {
-							keys = append(keys, normalizeName(fmt.Sprintf("%s%s%s", pkey, FieldsCombiner, ckey)))
-						}
-						currFieldInfo.keys = keys
+				// create cartesian product of keys
+				// eg: parent keys x field keys
+				keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
+				for _, pkey := range parentKeys {
+					for _, ckey := range currFieldInfo.keys {
+						keys = append(keys, normalizeName(fmt.Sprintf("%s%s%s", pkey, FieldsCombiner, ckey)))
 					}
-				} else {
-					keys := make([]string, 0, len(parentKeys))
-					for _, pkey := range parentKeys {
-						keys = append(keys, normalizeName(fmt.Sprintf("%s%s%s", pkey, FieldsCombiner, normalizeName(field.Name))))
-						currFieldInfo.keys = keys
-					}
+					currFieldInfo.keys = keys
 				}
 			}
 		}
