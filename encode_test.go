@@ -575,6 +575,28 @@ func Test_writeTo_nested_struct(t *testing.T) {
 	}
 	assertLine(t, []string{"one.boolField1", "one.stringField2", "two.boolField1", "two.stringField2", "three.boolField1", "three.stringField2"}, lines[0])
 	assertLine(t, []string{"false", "email_one", "true", "email_two", "false", "email_three"}, lines[1])
+	t.Run("struct is a child element ", func(t *testing.T) {
+		type Nested struct {
+			UpdatedAt *time.Time `csv:"updated_at"`
+		}
+		type Row struct {
+			Name string `csv:"name"`
+			Data Nested `csv:"data"`
+		}
+		data := time.Date(2022, 12, 11, 13, 14, 15, 123456, time.UTC)
+		dat := []Row{{Name: "matthew", Data: Nested{UpdatedAt: &data}}}
+		got, err := MarshalString(dat)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := `name,data.updated_at
+matthew,2022-12-11T13:14:15.000123456Z
+`
+		if got != want {
+			t.Fatalf("Error marshaling floats with , as separator. Expected \n%s\ngot:\n%s", want, got)
+		}
+	})
+
 }
 
 func Test_non_marshaling_nested_fields_are_prefixed(t *testing.T) {
@@ -585,7 +607,7 @@ func Test_non_marshaling_nested_fields_are_prefixed(t *testing.T) {
 	time3 := time.Date(2023, 2, 19, 0, 0, 0, 0, time.UTC)
 
 	s := []SameNameStruct{
-		SameNameStruct{
+		{
 			Inner2: &InnerStruct2{
 				Bar:    "bar1",
 				Inner3: InnerStruct3{Bar: "bar2", Foo: time1},
