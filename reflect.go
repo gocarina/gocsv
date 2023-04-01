@@ -141,40 +141,47 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 
 		if field.Type.Kind() == reflect.Slice || field.Type.Kind() == reflect.Array {
 			var arrayLength = -1
+			// if the field is a slice or an array, see if it has a `csv[n]` tag
 			if arrayTag, ok := field.Tag.Lookup(TagName + "[]"); ok {
 				arrayLength, _ = strconv.Atoi(arrayTag)
 			}
 
-			// When the field is a slice/array of structs, create a fieldInfo for each index and each field
+			// slices or arrays of Struct get special handling
 			if field.Type.Elem().Kind() == reflect.Struct {
 				fieldInfos := getFieldInfos(field.Type.Elem(), []int{}, []string{})
 
-				for idx := 0; idx < arrayLength; idx++ {
-					// copy index chain and append array index
-					var cpy2 = make([]int, len(indexChain))
-					copy(cpy2, indexChain)
-					arrayIndexChain := append(cpy2, idx)
-					for _, childFieldInfo := range fieldInfos {
-						// copy array index chain and append array index
-						var cpy3 = make([]int, len(arrayIndexChain))
-						copy(cpy3, arrayIndexChain)
+				// if no special csv[] tag was supplied, just include the field directly
+				if arrayLength == -1 {
+					fieldsList = append(fieldsList, *currFieldInfo)
+				} else {
+					// When the field is a slice/array of structs, create a fieldInfo for each index and each field
+					for idx := 0; idx < arrayLength; idx++ {
+						// copy index chain and append array index
+						var cpy2 = make([]int, len(indexChain))
+						copy(cpy2, indexChain)
+						arrayIndexChain := append(cpy2, idx)
+						for _, childFieldInfo := range fieldInfos {
+							// copy array index chain and append array index
+							var cpy3 = make([]int, len(arrayIndexChain))
+							copy(cpy3, arrayIndexChain)
 
-						arrayFieldInfo := fieldInfo{
-							IndexChain:   append(cpy3, childFieldInfo.IndexChain...),
-							omitEmpty:    childFieldInfo.omitEmpty,
-							defaultValue: childFieldInfo.defaultValue,
-							partial:      childFieldInfo.partial,
-						}
-
-						// create cartesian product of keys
-						// eg: array field keys x struct field keys
-						for _, akey := range currFieldInfo.keys {
-							for _, fkey := range childFieldInfo.keys {
-								arrayFieldInfo.keys = append(arrayFieldInfo.keys, normalizeName(fmt.Sprintf("%s[%d].%s", akey, idx, fkey)))
+							arrayFieldInfo := fieldInfo{
+								IndexChain:   append(cpy3, childFieldInfo.IndexChain...),
+								omitEmpty:    childFieldInfo.omitEmpty,
+								defaultValue: childFieldInfo.defaultValue,
+								partial:      childFieldInfo.partial,
 							}
-						}
 
-						fieldsList = append(fieldsList, arrayFieldInfo)
+							// create cartesian product of keys
+							// eg: array field keys x struct field keys
+							for _, akey := range currFieldInfo.keys {
+								for _, fkey := range childFieldInfo.keys {
+									arrayFieldInfo.keys = append(arrayFieldInfo.keys, normalizeName(fmt.Sprintf("%s[%d].%s", akey, idx, fkey)))
+								}
+							}
+
+							fieldsList = append(fieldsList, arrayFieldInfo)
+						}
 					}
 				}
 			} else if arrayLength > 0 {

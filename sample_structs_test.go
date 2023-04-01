@@ -21,6 +21,7 @@ type SliceSample struct {
 
 type SliceStructSample struct {
 	Slice       []SliceStruct  `csv:"s,slice" csv[]:"2"`
+	Slice2      []SliceStruct  `csv:"sliceText"`
 	SimpleSlice []int          `csv:"ints" csv[]:"3"`
 	Array       [2]SliceStruct `csv:"a,array" csv[]:"2"`
 }
