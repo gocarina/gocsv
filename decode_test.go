@@ -3,6 +3,7 @@ package gocsv
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"io"
 	"reflect"
 	"strconv"
@@ -407,6 +408,8 @@ func Test_maybeMissingStructFields(t *testing.T) {
 	// bad headers, expect an error
 	if err := maybeMissingStructFields(structTags, badHeaders); err == nil {
 		t.Fatal("expected an error, but no error found")
+	} else if !errors.Is(err, ErrUnmatchedStructTags) {
+		t.Fatal("expected ErrUnmatchedStructTags, but got a different error")
 	}
 
 	// good headers, expect no error
@@ -425,6 +428,8 @@ func Test_maybeMissingStructFields(t *testing.T) {
 	mismatchedHeaders := []string{"foo", "qux", "quux", "corgi"}
 	if err := maybeMissingStructFields(structTags, mismatchedHeaders); err == nil {
 		t.Fatal("expected an error, but no error found")
+	} else if !errors.Is(err, ErrUnmatchedStructTags) {
+		t.Fatal("expected ErrUnmatchedStructTags, but got a different error")
 	}
 }
 
@@ -438,6 +443,8 @@ e,3,b`)
 	// *** check maybeDoubleHeaderNames
 	if err := maybeDoubleHeaderNames([]string{"foo", "BAR", "foo"}); err == nil {
 		t.Fatal("maybeDoubleHeaderNames did not raise an error when a should have.")
+	} else if !errors.Is(err, ErrDoubleHeaderNames) {
+		t.Fatal("maybeDoubleHeaderNames did not raise an error of type ErrDoubleHeaderNames.")
 	}
 
 	// *** check readTo
