@@ -9,6 +9,11 @@ import (
 	"reflect"
 )
 
+var (
+	ErrUnmatchedStructTags = errors.New("unmatched struct tags")
+	ErrDoubleHeaderNames   = errors.New("double header names")
+)
+
 // Decoder .
 type Decoder interface {
 	GetCSVRows() ([][]string, error)
@@ -104,7 +109,7 @@ func mismatchHeaderFields(structInfo []fieldInfo, headers []string) []string {
 func maybeMissingStructFields(structInfo []fieldInfo, headers []string) error {
 	missing := mismatchStructFields(structInfo, headers)
 	if len(missing) != 0 {
-		return fmt.Errorf("found unmatched struct field with tags %v", missing)
+		return fmt.Errorf("found unmatched struct field with tags %v, %w", missing, ErrUnmatchedStructTags)
 	}
 	return nil
 }
@@ -114,7 +119,7 @@ func maybeDoubleHeaderNames(headers []string) error {
 	headerMap := make(map[string]bool, len(headers))
 	for _, v := range headers {
 		if _, ok := headerMap[v]; ok {
-			return fmt.Errorf("repeated header name: %v", v)
+			return fmt.Errorf("repeated header name: %v, %w", v, ErrDoubleHeaderNames)
 		}
 		headerMap[v] = true
 	}
