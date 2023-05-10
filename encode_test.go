@@ -66,7 +66,7 @@ func Test_writeTo_Time(t *testing.T) {
 	}
 
 	ft := time.Now()
-	ft.UnmarshalText([]byte(lines[0][0]))
+	err = ft.UnmarshalText([]byte(lines[0][0]))
 	if err != nil {
 		t.Fatal(err)
 	}
