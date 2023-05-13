@@ -496,7 +496,7 @@ func CSVToMap(in io.Reader) (map[string]string, error) {
 
 // CSVToMaps takes a reader and returns an array of dictionaries, using the header row as the keys
 func CSVToMaps(reader io.Reader) ([]map[string]string, error) {
-	r := csv.NewReader(reader)
+	r := getCSVReader(reader)
 	rows := []map[string]string{}
 	var header []string
 	for {
