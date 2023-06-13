@@ -296,7 +296,83 @@ ff,gg,22,hh,ii,jj`)
 	e := make(chan error)
 	var samples []SkipFieldSample
 	go func() {
-		if err := readEach(d, c); err != nil {
+		if err := readEach(d, nil, c); err != nil {
+			e <- err
+		}
+	}()
+L:
+	for {
+		select {
+		case err := <-e:
+			t.Fatal(err)
+		case v, ok := <-c:
+			if !ok {
+				break L
+			}
+			samples = append(samples, v)
+
+		}
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "aa",
+			Sample: Sample{
+				Foo: "bb",
+				Bar: 11,
+				Baz: "cc",
+			},
+			Quux: "dd",
+		},
+		Corge: "ee",
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "ff",
+			Sample: Sample{
+				Foo: "gg",
+				Bar: 22,
+				Baz: "hh",
+			},
+			Quux: "ii",
+		},
+		Corge: "jj",
+	}
+	if expected != samples[1] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
+	}
+}
+
+func Test_readEach_withErrorHandler(t *testing.T) {
+	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee
+ff,gg,22,hh,ii,jj
+kk,ll,ab,mm,nn,oo
+`)
+	d := newSimpleDecoderFromReader(b)
+
+	var errHandler ErrorHandler
+	errHandler = func(parseError *csv.ParseError) bool {
+		if parseError.Line != 4 {
+			t.Fatalf("expected parse error on line 4, got %d", parseError.Line)
+		}
+
+		if parseError.Column != 3 {
+			t.Fatalf("expected parse error on column 3, got %d", parseError.Column)
+		}
+		return false
+	}
+
+	c := make(chan SkipFieldSample)
+	e := make(chan error)
+	var samples []SkipFieldSample
+	go func() {
+		if err := readEach(d, errHandler, c); err != nil {
 			e <- err
 		}
 	}()
@@ -486,7 +562,7 @@ e,3,b`)
 	c := make(chan Sample)
 	e := make(chan error)
 	go func() {
-		if err := readEach(d, c); err != nil {
+		if err := readEach(d, nil, c); err != nil {
 			e <- err
 		}
 	}()
@@ -516,7 +592,7 @@ e,3,b`)
 	c = make(chan Sample)
 	e = make(chan error)
 	go func() {
-		if err := readEach(d, c); err == nil {
+		if err := readEach(d, nil, c); err == nil {
 			e <- err
 		}
 	}()
