@@ -194,7 +194,7 @@ func UnmarshalMultipartFile(in *multipart.File, out interface{}) error {
 	return Unmarshal(convertTo(in), out)
 }
 
-// UnmarshalFile parses the CSV from the file in the interface.
+// UnmarshalFileWithErrorHandler parses the CSV from the file in the interface.
 func UnmarshalFileWithErrorHandler(in *os.File, errHandler ErrorHandler, out interface{}) error {
 	return UnmarshalWithErrorHandler(in, errHandler, out)
 }
@@ -282,7 +282,15 @@ func UnmarshalToChan(in io.Reader, c interface{}) error {
 	if c == nil {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
-	return readEach(newSimpleDecoderFromReader(in), c)
+	return readEach(newSimpleDecoderFromReader(in), nil, c)
+}
+
+// UnmarshalToChanWithErrorHandler parses the CSV from the reader in the interface.
+func UnmarshalToChanWithErrorHandler(in io.Reader, errorHandler ErrorHandler, c interface{}) error {
+	if c == nil {
+		return fmt.Errorf("goscv: channel is %v", c)
+	}
+	return readEach(newSimpleDecoderFromReader(in), errorHandler, c)
 }
 
 // UnmarshalToChanWithoutHeaders parses the CSV from the reader and send each value in the chan c.
@@ -300,7 +308,7 @@ func UnmarshalDecoderToChan(in SimpleDecoder, c interface{}) error {
 	if c == nil {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
-	return readEach(in, c)
+	return readEach(in, nil, c)
 }
 
 // UnmarshalStringToChan parses the CSV from the string and send each value in the chan c.

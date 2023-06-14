@@ -246,7 +246,7 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 	return nil
 }
 
-func readEach(decoder SimpleDecoder, c interface{}) error {
+func readEach(decoder SimpleDecoder, errHandler ErrorHandler, c interface{}) error {
 	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer)
 	if outType.Kind() != reflect.Chan {
 		return fmt.Errorf("cannot use %v with type %s, only channel supported", c, outType)
@@ -301,10 +301,14 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 		for j, csvColumnContent := range line {
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
 				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
-					return &csv.ParseError{
+					parseError := &csv.ParseError{
 						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
 						Column: j + 1,
 						Err:    err,
+					}
+
+					if errHandler == nil || !errHandler(parseError) {
+						return parseError
 					}
 				}
 			}
