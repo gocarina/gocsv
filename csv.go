@@ -354,7 +354,7 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 			}
 		}
 	}
-	return nil
+	return <-cerr
 }
 
 // UnmarshalDecoderToCallback parses the CSV from the decoder and send each value to the given func f.
@@ -382,7 +382,8 @@ func UnmarshalDecoderToCallback(in SimpleDecoder, f interface{}) error {
 		}
 		valueFunc.Call([]reflect.Value{v})
 	}
-	return nil
+
+	return <-cerr
 }
 
 // UnmarshalBytesToCallback parses the CSV from the bytes and send each value to the given func f.
