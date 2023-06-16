@@ -382,7 +382,6 @@ func UnmarshalDecoderToCallback(in SimpleDecoder, f interface{}) error {
 		}
 		valueFunc.Call([]reflect.Value{v})
 	}
-
 	return <-cerr
 }
 
