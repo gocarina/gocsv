@@ -107,6 +107,7 @@ func writeTo(writer CSVWriter, in interface{}, omitHeaders bool) error {
 	return writer.Error()
 }
 
+// ensureStructOrPtr checks if t is a struct or a pointer.
 func ensureStructOrPtr(t reflect.Type) error {
 	switch t.Kind() {
 	case reflect.Struct:
@@ -114,7 +115,7 @@ func ensureStructOrPtr(t reflect.Type) error {
 	case reflect.Ptr:
 		return nil
 	}
-	return fmt.Errorf("cannot use " + t.String() + ", only slice or array supported")
+	return fmt.Errorf("cannot use " + t.String() + ", only struct or ptr supported")
 }
 
 // Check if the inType is an array or a slice
