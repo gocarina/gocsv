@@ -7,9 +7,7 @@ import (
 	"reflect"
 )
 
-var (
-	ErrChannelIsClosed = errors.New("channel is closed")
-)
+var ErrChannelIsClosed = errors.New("channel is closed")
 
 type encoder struct {
 	out io.Writer
@@ -19,7 +17,7 @@ func newEncoder(out io.Writer) *encoder {
 	return &encoder{out}
 }
 
-func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool) error {
+func writeFromChan[T any](writer CSVWriter, c <-chan T, omitHeaders bool) error {
 	// Get the first value. It wil determine the header structure.
 	firstValue, ok := <-c
 	if !ok {
