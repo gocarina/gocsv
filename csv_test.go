@@ -7,14 +7,14 @@ import (
 
 func TestUnmarshalToCallback_ReaderError(t *testing.T) {
 	type Dummy struct{}
-	var reader = &errorReader{}
+	reader := &errorReader{}
 
-	err := UnmarshalToCallback(reader, func(Dummy) {})
+	err := UnmarshalToCallback(reader, func(Dummy) error { return nil })
 	if !errors.Is(err, readerErr) {
 		t.Error("UnmarshalToCallback should return first reader error")
 	}
 
-	err = UnmarshalDecoderToCallback(newSimpleDecoderFromReader(reader), func(Dummy) {})
+	err = UnmarshalDecoderToCallback(newSimpleDecoderFromReader(reader), func(Dummy) error { return nil })
 	if !errors.Is(err, readerErr) {
 		t.Error("UnmarshalDecoderToCallback should return first reader error")
 	}
