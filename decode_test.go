@@ -467,6 +467,57 @@ L:
 	}
 }
 
+// Test_readEach_TypeUnmarshalCSVWithFields test that readEach works with type implementing TypeUnmarshalCSVWithFields for unmarshalling
+func Test_readEach_TypeUnmarshalCSVWithFields(t *testing.T) {
+	b := bytes.NewBufferString(`foo,bar,baz,frop
+bb,1,cc,3.14
+gg,2,hh,4`)
+	d := newSimpleDecoderFromReader(b)
+
+	c := make(chan UnmarshalCSVWithFieldsSample)
+	e := make(chan error)
+	var samples []UnmarshalCSVWithFieldsSample
+	go func() {
+		if err := readEach(d, nil, c); err != nil {
+			e <- err
+		}
+	}()
+L:
+	for {
+		select {
+		case err := <-e:
+			t.Fatal(err)
+		case v, ok := <-c:
+			if !ok {
+				break L
+			}
+			samples = append(samples, v)
+
+		}
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := UnmarshalCSVWithFieldsSample{
+		Foo:  "bb",
+		Bar:  1,
+		Baz:  "cc",
+		Frop: 314,
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = UnmarshalCSVWithFieldsSample{
+		Foo:  "gg",
+		Bar:  2,
+		Baz:  "hh",
+		Frop: 400,
+	}
+	if expected != samples[1] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
+	}
+}
+
 func Test_maybeMissingStructFields(t *testing.T) {
 	structTags := []fieldInfo{
 		{keys: []string{"foo"}},
@@ -712,7 +763,7 @@ func (rf *RenamedFloat64Unmarshaler) UnmarshalCSV(csv string) (err error) {
 	return nil
 }
 
-// TestUnmarshalCSVWithFields test that the TestUnmarshalCSVWithFields interface to marshall all the fields works
+// TestUnmarshalCSVWithFields test that the TestUnmarshalCSVWithFields interface to unmarshal all the fields works
 func TestUnmarshalCSVWithFields(t *testing.T) {
 	b := []byte(`foo,bar,baz,frop
 bar,1,zip,3.14
@@ -798,6 +849,62 @@ type UnmarshalError struct {
 
 func (e UnmarshalError) Error() string {
 	return e.msg
+}
+
+// TestUnmarshalCSVWithFieldsNoTags test that the TypeUnmarshalCSVWithFields interface works for types without matching csv tags (or no csv tags at all)
+func TestUnmarshalCSVWithFieldsNoTags(t *testing.T) {
+	b := []byte(`foo,bar,baz,frop
+bar,1,zip,3.14
+baz,2,zap,4.00`)
+	var samples []NoTagsSample
+	err := UnmarshalBytes(b, &samples)
+	if err != nil {
+		t.Fatalf("UnmarshalCSVWithFields() -> UnmarshalBytes() %v", err)
+	}
+
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+
+	if len(samples[0].Fields) != 4 {
+		t.Fatalf("expected 4 sample fields in map, got %d", len(samples[0].Fields))
+	}
+
+	checkFieldMap := func(expected map[string]string, actual map[string]string) {
+		for expectedKey, expectedValue := range expected {
+			if sampleValue, ok := actual[expectedKey]; ok {
+				if sampleValue != expectedValue {
+					t.Fatalf("expected %s key in map to have %s value, got %s", expectedKey, expectedValue, sampleValue)
+				}
+			} else {
+				t.Fatalf("expected map to have key %s", expectedKey)
+			}
+		}
+	}
+
+	expectedFields := map[string]string{
+		"foo":  "bar",
+		"bar":  "1",
+		"baz":  "zip",
+		"frop": "3.14",
+	}
+	checkFieldMap(expectedFields, samples[0].Fields)
+
+	expectedFields = map[string]string{
+		"foo":  "baz",
+		"bar":  "2",
+		"baz":  "zap",
+		"frop": "4.00",
+	}
+	checkFieldMap(expectedFields, samples[1].Fields)
+}
+
+func (u *NoTagsSample) UnmarshalCSVWithFields(key, value string) error {
+	if u.Fields == nil {
+		u.Fields = map[string]string{}
+	}
+	u.Fields[key] = value
+	return nil
 }
 
 func TestMultipleStructTags(t *testing.T) {

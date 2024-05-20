@@ -203,22 +203,22 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		objectIface := reflect.New(outValue.Index(i).Type()).Interface()
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range csvRow {
-			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-
-				if outInner.CanInterface() {
-					fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
-					if withFieldsOK {
-						if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(fieldInfo.getFirstKey(), csvColumnContent); err != nil {
-							parseError := csv.ParseError{
-								Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-								Column: j + 1,
-								Err:    err,
-							}
-							return &parseError
+			if outInner.CanInterface() {
+				fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
+				if withFieldsOK {
+					if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
+						parseError := csv.ParseError{
+							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+							Column: j + 1,
+							Err:    err,
 						}
-						continue
+						return &parseError
 					}
+					continue
 				}
+			}
+
+			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
 				value := csvColumnContent
 				if value == "" {
 					value = fieldInfo.defaultValue
