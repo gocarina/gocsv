@@ -188,3 +188,9 @@ type NestedSample struct {
 type NestedEmbedSample struct {
 	InnerStruct
 }
+
+type NoTagsSample struct {
+	Fields map[string]string
+}
+
+var _ TypeUnmarshalCSVWithFields = (*NoTagsSample)(nil)
