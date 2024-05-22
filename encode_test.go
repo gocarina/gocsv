@@ -466,9 +466,9 @@ func TestRenamedTypesMarshal(t *testing.T) {
 	}
 
 	SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
-		csvout := NewSafeCSVWriter(csv.NewWriter(out))
-		csvout.Comma = ';'
-		return csvout
+		writer := csv.NewWriter(out)
+		writer.Comma = ';'
+		return NewSafeCSVWriter(writer)
 	})
 	// Switch back to default for tests executed after this
 	defer SetCSVWriter(DefaultCSVWriter)
