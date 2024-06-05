@@ -1,14 +1,13 @@
 package gocsv
 
 import (
-	"encoding/csv"
 	"fmt"
 	"reflect"
 )
 
 // Unmarshaller is a CSV to struct unmarshaller.
 type Unmarshaller struct {
-	reader                 *csv.Reader
+	reader                 CSVReader
 	Headers                []string
 	fieldInfoMap           []*fieldInfo
 	MismatchedHeaders      []string
@@ -18,7 +17,7 @@ type Unmarshaller struct {
 }
 
 // NewUnmarshaller creates an unmarshaller from a csv.Reader and a struct.
-func NewUnmarshaller(reader *csv.Reader, out interface{}) (*Unmarshaller, error) {
+func NewUnmarshaller(reader CSVReader, out interface{}) (*Unmarshaller, error) {
 	headers, err := reader.Read()
 	if err != nil {
 		return nil, err
