@@ -491,6 +491,34 @@ func TestRenamedTypesMarshal(t *testing.T) {
 	}
 }
 
+// TestColumnNameStartingWithPartial is a regression test for issue #274: a column name that
+// happens to start with "partial" (e.g. "partial_delivery_number") must not be mistaken for the
+// "partial" tag option. Previously the option was detected with strings.HasPrefix, so such a
+// column name was swallowed and gocsv fell back to using the Go field name instead.
+func TestColumnNameStartingWithPartial(t *testing.T) {
+	type sample struct {
+		PartialDeliveryNumber uint `csv:"partial_delivery_number"`
+	}
+
+	// Marshal: the header must be the csv tag, not the Go field name.
+	csvContent, err := MarshalString(&[]sample{{PartialDeliveryNumber: 7}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if expected := "partial_delivery_number\n7\n"; csvContent != expected {
+		t.Fatalf("expected header from csv tag.\nexpected: %q\ngot:      %q", expected, csvContent)
+	}
+
+	// Unmarshal: a CSV whose header is the csv tag must populate the field.
+	var out []sample
+	if err := Unmarshal(bytes.NewBufferString("partial_delivery_number\n42\n"), &out); err != nil {
+		t.Fatal(err)
+	}
+	if len(out) != 1 || out[0].PartialDeliveryNumber != 42 {
+		t.Fatalf("expected PartialDeliveryNumber=42, got %+v", out)
+	}
+}
+
 // TestCustomTagSeparatorMarshal tests for custom tag separator in marshalling.
 func TestCustomTagSeparatorMarshal(t *testing.T) {
 	samples := []RenamedSample{
