@@ -225,7 +225,10 @@ func filterTags(tagName string, indexChain []int, field reflect.StructField) (*f
 		trimmedFieldTagEntry := strings.TrimSpace(fieldTagEntry) // handles cases like `csv:"foo, omitempty, default=test"`
 		if trimmedFieldTagEntry == "omitempty" {
 			currFieldInfo.omitEmpty = true
-		} else if strings.HasPrefix(trimmedFieldTagEntry, "partial") {
+		} else if trimmedFieldTagEntry == "partial" {
+			// Must be an exact match: using HasPrefix here would mistake a column name that
+			// happens to start with "partial" (e.g. `csv:"partial_delivery_number"`) for the
+			// "partial" option, dropping the real column name. See issue #274.
 			currFieldInfo.partial = true
 		} else if strings.HasPrefix(trimmedFieldTagEntry, "default=") {
 			currFieldInfo.defaultValue = strings.TrimPrefix(trimmedFieldTagEntry, "default=")
