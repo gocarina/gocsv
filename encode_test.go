@@ -164,6 +164,24 @@ func Test_writeTo_slice(t *testing.T) {
 	assertLine(t, []string{"test2", "[4,5,6]"}, lines[2])
 }
 
+func TestMarshalInterfaceSlice(t *testing.T) {
+	type sample struct {
+		Type  string
+		Value interface{}
+	}
+
+	csvContent, err := MarshalString(&[]sample{
+		{Type: "numbers", Value: []int64{1, 2, 3}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if expected := "Type,Value\nnumbers,\"[1,2,3]\"\n"; csvContent != expected {
+		t.Fatalf("expected interface slice to marshal as JSON.\nexpected: %q\ngot:      %q", expected, csvContent)
+	}
+}
+
 func Test_writeTo_slice_structs(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
