@@ -3,130 +3,139 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"io"
-	"io/ioutil"
+	"log"
 	"os"
-	"time"
-
-	"github.com/gocarina/gocsv"
 )
 
-type NotUsed struct {
-	Name string
-}
-
-type Client struct { // Our example struct, you can use "-" to ignore a field
-	ID            string   `csv:"client_id"`
-	Name          string   `csv:"client_name"`
-	Age           string   `csv:"client_age"`
-	NotUsedString string   `csv:"-"`
-	NotUsedStruct NotUsed  `csv:"-"`
-	Address1      Address  `csv:"addr1"`
-	Address2      Address  //`csv:"addr2"` will use Address2 in header
-	Employed      DateTime `csv:"employed"`
-}
-
-type Address struct {
-	Street string `csv:"street"`
-	City   string `csv:"city"`
-}
-
-var _ gocsv.TypeMarshaller = new(DateTime)
-var _ gocsv.TypeUnmarshaller = new(DateTime)
-
-type DateTime struct {
-	time.Time
-}
-
-// Convert the internal date as CSV string
-func (date *DateTime) MarshalCSV() (string, error) {
-	return date.String(), nil
-}
-
-// You could also use the standard Stringer interface
-func (date DateTime) String() string {
-	return date.Time.Format("20060201")
-}
-
-// Convert the CSV string as internal date
-func (date *DateTime) UnmarshalCSV(csv string) (err error) {
-	date.Time, err = time.Parse("20060201", csv)
-	return err
+type Test struct {
+	TestName   string  `csv:"Test Name"`
+	TestDate   string  `csv:"Test Date"`
+	Batch      string  `csv:"Batch"`
+	SA         int     `csv:"Student Appeared"`
+	TMode      string  `csv:"Test Mode"`
+	Physics    int     `csv:"Physics (180)"`
+	Chemistry  int     `csv:"Chemistry (180)"`
+	Biology    int     `csv:"Biology (360)"`
+	Total      int     `csv:"Total Marks (720)"`
+	Percentage float64 `csv:"Percentage (%)"`
+	Percentile float64 `csv:"Percentile"`
+	TestRank   string  `csv:"Test Rank"`
+	AIR        string  `csv:"AIR"`
 }
 
 func main() {
-	// set the pipe as the delimiter for writing
-	gocsv.TagSeparator = "|"
-	// set the pipe as the delimiter for reading
-	gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
-		r := csv.NewReader(in)
-		r.Comma = '|'
-		return r
-	})
+	// Data representing the Student Performance Report
+	tests := []Test{
+		{
+			TestName:   "MAJOR TEST (M36604460)",
+			TestDate:   "18 Dec-24",
+			Batch:      "MEL6B",
+			SA:         5546,
+			TMode:      "OFFLINE",
+			Physics:    150,
+			Chemistry:  149,
+			Biology:    338,
+			Total:      637,
+			Percentage: 88.47,
+			Percentile: 93.23,
+			TestRank:   "-",
+			AIR:        "-",
+		},
+		{
+			TestName:   "MAJOR TEST (M36013940)",
+			TestDate:   "13 Dec-24",
+			Batch:      "MEL6B",
+			SA:         5938,
+			TMode:      "OFFLINE",
+			Physics:    144,
+			Chemistry:  152,
+			Biology:    331,
+			Total:      627,
+			Percentage: 87.08,
+			Percentile: 91.23,
+			TestRank:   "-",
+			AIR:        "-",
+		},
+		{
+			TestName:   "MAJOR TEST (M35516516)",
+			TestDate:   "08 Dec-24",
+			Batch:      "MEL6B",
+			SA:         6455,
+			TMode:      "OFFLINE",
+			Physics:    126,
+			Chemistry:  152,
+			Biology:    355,
+			Total:      633,
+			Percentage: 87.92,
+			Percentile: 96.75,
+			TestRank:   "-",
+			AIR:        "-",
+		},
+		{
+			TestName:   "MAJOR TEST (M35049023)",
+			TestDate:   "03 Dec-24",
+			Batch:      "MEL6B",
+			SA:         6178,
+			TMode:      "OFFLINE",
+			Physics:    165,
+			Chemistry:  170,
+			Biology:    355,
+			Total:      690,
+			Percentage: 95.83,
+			Percentile: 99.04,
+			TestRank:   "-",
+			AIR:        "-",
+		},
+	}
 
-	// Create an empty clients file
-	clientsFile, err := os.OpenFile("clients.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	// Create the CSV file
+	file, err := os.Create("student_performance_report.csv")
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to create CSV file: %v", err)
 	}
-	defer clientsFile.Close()
+	defer file.Close()
 
-	// Create clients
-	clients := []*Client{
-		{ID: "12", Name: "John", Age: "21",
-			Address1: Address{"Street 1", "City1"},
-			Address2: Address{"Street 2", "City2"},
-			Employed: DateTime{time.Date(2022, 11, 04, 12, 0, 0, 0, time.UTC)},
-		},
-		{ID: "13", Name: "Fred",
-			Address1: Address{`Main "Street" 1`, "City1"}, // show quotes in value
-			Address2: Address{"Main Street 2", "City2"},
-			Employed: DateTime{time.Date(2022, 11, 04, 13, 0, 0, 0, time.UTC)},
-		},
-		{ID: "14", Name: "James", Age: "32",
-			Address1: Address{"Center Street 1", "City1"},
-			Address2: Address{"Center Street 2", "City2"},
-			Employed: DateTime{time.Date(2022, 11, 04, 14, 0, 0, 0, time.UTC)},
-		},
-		{ID: "15", Name: "Danny",
-			Address1: Address{"State Street 1", "City1"},
-			Address2: Address{"State Street 2", "City2"},
-			Employed: DateTime{time.Date(2022, 11, 04, 15, 0, 0, 0, time.UTC)},
-		},
-	}
-	// Save clients to csv file
-	if err = gocsv.MarshalFile(&clients, clientsFile); err != nil {
-		panic(err)
+	// Write to CSV
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	headers := []string{"Test Name", "Test Date", "Batch", "Student Appeared", "Test Mode", "Physics (180)", "Chemistry (180)", "Biology (360)", "Total Marks (720)", "Percentage (%)", "Percentile", "Test Rank", "AIR"}
+	if err := writer.Write(headers); err != nil {
+		log.Fatalf("Failed to write headers: %v", err)
 	}
 
-	// Reset the file reader
-	if _, err := clientsFile.Seek(0, io.SeekStart); err != nil {
-		panic(err)
+	// Write test data
+	for _, test := range tests {
+		row := []string{
+			test.TestName,
+			test.TestDate,
+			test.Batch,
+			formatInt(test.SA),
+			test.TMode,
+			formatInt(test.Physics),
+			formatInt(test.Chemistry),
+			formatInt(test.Biology),
+			formatInt(test.Total),
+			formatFloat(test.Percentage),
+			formatFloat(test.Percentile),
+			test.TestRank,
+			test.AIR,
+		}
+		if err := writer.Write(row); err != nil {
+			log.Fatalf("Failed to write row: %v", err)
+		}
 	}
-	// Read file and print to console
-	b, err := ioutil.ReadAll(clientsFile)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("clients.csv:")
-	fmt.Println(string(b))
 
-	// Reset the file reader
-	if _, err := clientsFile.Seek(0, io.SeekStart); err != nil {
-		panic(err)
-	}
-	// Load clients from file
-	var newClients []*Client
-	if err := gocsv.UnmarshalFile(clientsFile, &newClients); err != nil {
-		panic(err)
-	}
-	fmt.Println("clients:")
-	for _, c := range newClients {
-		fmt.Printf("%s:%s Adress1:%s, %s Address2:%s, %s Employed: %s\n",
-			c.ID, c.Name,
-			c.Address1.Street, c.Address1.City,
-			c.Address2.Street, c.Address2.City,
-			c.Employed,
-		)
-	}
+	log.Println("CSV successfully created: student_performance_report.csv")
+}
+
+// Helper function to format integers
+func formatInt(value int) string {
+	return fmt.Sprintf("%d", value)
+}
+
+// Helper function to format floats
+func formatFloat(value float64) string {
+	return fmt.Sprintf("%.2f", value)
 }
