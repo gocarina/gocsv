@@ -121,6 +121,42 @@ type Client struct { // Our example struct with a custom type (DateTime)
 
 ```
 
+Nested structs
+---
+
+By default, the fields of nested structs are prefixed with the parent field's
+name. For example:
+
+```go
+type Foo struct {
+	B Bar
+	X int `csv:"x"`
+}
+
+type Bar struct {
+	A int `csv:"a"`
+	B int `csv:"b"`
+}
+```
+
+produces columns `B.a, B.b, x`.
+
+Use the `csv:"."` tag to inline the nested struct's fields without that prefix; for example:
+
+```go
+type Foo struct {
+	B Bar `csv:"."`
+	X int `csv:"x"`
+}
+
+type Bar struct {
+	A int `csv:"a"`
+	B int `csv:"b"`
+}
+```
+
+produces columns `a, b, x`.
+
 Customizable CSV Reader / Writer
 ---
 

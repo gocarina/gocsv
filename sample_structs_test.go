@@ -189,6 +189,26 @@ type NestedEmbedSample struct {
 	InnerStruct
 }
 
+type InlineBar struct {
+	A int `csv:"a"`
+	B int `csv:"b"`
+}
+
+type InlineFooSample struct {
+	Bar InlineBar `csv:"."`
+	X   int       `csv:"x"`
+}
+
+type InlineFooPtrSample struct {
+	Bar *InlineBar `csv:"."`
+	X   int        `csv:"x"`
+}
+
+type InlineOuterSample struct {
+	Foo InlineFooSample `csv:"foo"`
+	Y   int             `csv:"y"`
+}
+
 type NoTagsSample struct {
 	Fields map[string]string
 }
