@@ -24,6 +24,7 @@ type fieldInfo struct {
 	IndexChain   []int
 	defaultValue string
 	partial      bool
+	inline       bool
 }
 
 func (f fieldInfo) getFirstKey() string {
@@ -86,6 +87,15 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 		copy(cpy, parentIndexChain)
 		indexChain := append(cpy, i)
 
+		// Determine whether it's a struct we can expand into nested columns.
+		// Structs that implement any of the text or CSV marshaling methods
+		// should result in one value and not have their fields exposed
+		fieldType := field.Type
+		if fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+		}
+		isExpandableStruct := fieldType.Kind() == reflect.Struct && !canMarshal(fieldType)
+
 		var currFieldInfo *fieldInfo
 		if !field.Anonymous {
 			filteredTags := []string{}
@@ -94,13 +104,17 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 			if len(filteredTags) == 1 && filteredTags[0] == "-" {
 				// ignore nested structs with - tag
 				continue
+			} else if isExpandableStruct && len(filteredTags) == 1 && filteredTags[0] == "." {
+				// inline nested structs with . tag
+				currFieldInfo.inline = true
+				currFieldInfo.keys = parentKeys
 			} else if len(filteredTags) > 0 && filteredTags[0] != "" {
 				currFieldInfo.keys = filteredTags
 			} else {
 				currFieldInfo.keys = []string{normalizeName(field.Name)}
 			}
 
-			if len(parentKeys) > 0 && currFieldInfo != nil {
+			if len(parentKeys) > 0 && currFieldInfo != nil && !currFieldInfo.inline {
 				// create cartesian product of keys
 				// eg: parent keys x field keys
 				keys := make([]string, 0, len(parentKeys)*len(currFieldInfo.keys))
@@ -114,24 +128,14 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 		}
 
 		// handle struct
-		fieldType := field.Type
-		// if the field is a pointer, follow the pointer
-		if fieldType.Kind() == reflect.Ptr {
-			fieldType = fieldType.Elem()
-		}
-		// if the field is a struct, create a fieldInfo for each of its fields
-		if fieldType.Kind() == reflect.Struct {
-			// Structs that implement any of the text or CSV marshaling methods
-			// should result in one value and not have their fields exposed
-			if !(canMarshal(fieldType)) {
-				// if the field is an embedded struct, pass along parent keys
-				keys := parentKeys
-				if currFieldInfo != nil {
-					keys = currFieldInfo.keys
-				}
-				fieldsList = append(fieldsList, getFieldInfos(fieldType, indexChain, keys)...)
-				continue
+		if isExpandableStruct {
+			// if the field is an embedded struct, pass along parent keys
+			keys := parentKeys
+			if currFieldInfo != nil {
+				keys = currFieldInfo.keys
 			}
+			fieldsList = append(fieldsList, getFieldInfos(fieldType, indexChain, keys)...)
+			continue
 		}
 
 		// if the field is an embedded struct, ignore the csv tag

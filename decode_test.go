@@ -1344,3 +1344,18 @@ false,email_one,true,email_two,false,email_three`)
 		t.Fatalf("expected \n  sample: %v\n     got: %v", expected, samples)
 	}
 }
+
+func Test_readTo_inline_nested_struct(t *testing.T) {
+	b := bytes.NewBufferString("a,b,x\n1,2,3")
+	d := newSimpleDecoderFromReader(b)
+
+	var samples []InlineFooSample
+	if err := readTo(d, &samples); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+
+	expected := []InlineFooSample{{Bar: InlineBar{A: 1, B: 2}, X: 3}}
+	if !reflect.DeepEqual(expected, samples) {
+		t.Fatalf("expected \n  sample: %v\n     got: %v", expected, samples)
+	}
+}

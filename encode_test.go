@@ -681,3 +681,48 @@ func Test_non_marshaling_nested_fields_are_prefixed(t *testing.T) {
 	assertLine(t, []string{"Inner2.Bar", "Inner2.Inner3.Bar", "Inner2.Inner3.Foo", "Inner3.Bar", "Inner3.Foo", "Foo"}, lines[0])
 	assertLine(t, []string{"bar1", "bar2", "2021-02-19T00:00:00Z", "bar3", "2022-02-19T00:00:00Z", "2023-02-19T00:00:00Z"}, lines[1])
 }
+
+func Test_writeTo_inline_nested_struct(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []InlineFooSample{
+		{Bar: InlineBar{A: 1, B: 2}, X: 3},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false); err != nil {
+		t.Fatal(err)
+	}
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	// The `csv:"."` tag inlines Bar's fields without the "Bar." prefix.
+	assertLine(t, []string{"a", "b", "x"}, lines[0])
+	assertLine(t, []string{"1", "2", "3"}, lines[1])
+
+	t.Run("pointer to struct", func(t *testing.T) {
+		got, err := MarshalString([]InlineFooPtrSample{{Bar: &InlineBar{A: 4, B: 5}, X: 6}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := "a,b,x\n4,5,6\n"
+		if got != want {
+			t.Fatalf("expected:\n%s\ngot:\n%s", want, got)
+		}
+	})
+
+	t.Run("inline struct nested under a prefixed field", func(t *testing.T) {
+		got, err := MarshalString([]InlineOuterSample{{Foo: InlineFooSample{Bar: InlineBar{A: 1, B: 2}, X: 3}, Y: 4}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Foo is prefixed with "foo", and Bar's "." tag drops only its own name,
+		// so Bar's fields keep the inherited "foo." prefix.
+		want := "foo.a,foo.b,foo.x,y\n1,2,3,4\n"
+		if got != want {
+			t.Fatalf("expected:\n%s\ngot:\n%s", want, got)
+		}
+	})
+}
