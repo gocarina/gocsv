@@ -130,7 +130,8 @@ func toInt(in interface{}) (int64, error) {
 			return 0, nil
 		}
 		out := strings.SplitN(s, ".", 2)
-		return strconv.ParseInt(out[0], 0, 64)
+		// base 10, not 0: a CSV field is data, not a Go literal
+		return strconv.ParseInt(out[0], 10, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
@@ -164,7 +165,8 @@ func toUint(in interface{}) (uint64, error) {
 			}
 			return uint64(f), nil
 		}
-		return strconv.ParseUint(s, 0, 64)
+		// base 10, see toInt
+		return strconv.ParseUint(s, 10, 64)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
