@@ -153,3 +153,28 @@ c,d,e
 		t.Fatalf("Unepxected result from Read(): (%#v, %#v)", obj, err)
 	}
 }
+
+func TestUnmarshallerDefaultValues(t *testing.T) {
+	type sample struct {
+		Name string `csv:"name"`
+		Qty  int    `csv:"qty,default=42"`
+		Tier string `csv:"tier,default=basic"`
+	}
+
+	const doc = "name,qty,tier\nalice,,\n"
+
+	um, err := NewUnmarshaller(csv.NewReader(strings.NewReader(doc)), sample{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := um.Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// readTo and readEach already apply fieldInfo.defaultValue for an empty cell.
+	want := sample{Name: "alice", Qty: 42, Tier: "basic"}
+	if got != want {
+		t.Errorf("expected %+v, got %+v", want, got)
+	}
+}
