@@ -139,3 +139,58 @@ func TestToInt(t *testing.T) {
 		}
 	}
 }
+
+func TestToIntLeadingZeros(t *testing.T) {
+	testCases := []struct {
+		field  string
+		result int64
+	}{
+		{"08", 8},
+		{"09", 9},
+		{"010", 10},
+		{"007", 7},
+		{"0009", 9},
+		{"-08", -8},
+		{"-010", -10},
+		{"0", 0},
+		{"00", 0},
+		{"010.9", 10},
+	}
+
+	for _, item := range testCases {
+		out, err := toInt(item.field)
+		if err != nil {
+			t.Errorf("toInt(%q) returned an error: %s", item.field, err)
+			continue
+		}
+		if out != item.result {
+			t.Errorf("toInt(%q) = %d, want %d", item.field, out, item.result)
+		}
+	}
+}
+
+func TestToUintLeadingZeros(t *testing.T) {
+	testCases := []struct {
+		field  string
+		result uint64
+	}{
+		{"08", 8},
+		{"09", 9},
+		{"010", 10},
+		{"007", 7},
+		{"0009", 9},
+		{"0", 0},
+		{"00", 0},
+	}
+
+	for _, item := range testCases {
+		out, err := toUint(item.field)
+		if err != nil {
+			t.Errorf("toUint(%q) returned an error: %s", item.field, err)
+			continue
+		}
+		if out != item.result {
+			t.Errorf("toUint(%q) = %d, want %d", item.field, out, item.result)
+		}
+	}
+}

@@ -1359,3 +1359,33 @@ func Test_readTo_inline_nested_struct(t *testing.T) {
 		t.Fatalf("expected \n  sample: %v\n     got: %v", expected, samples)
 	}
 }
+
+func TestUnmarshalZeroPaddedNumbers(t *testing.T) {
+	type row struct {
+		Name  string `csv:"name"`
+		Code  int    `csv:"code"`
+		Count uint   `csv:"count"`
+	}
+
+	in := "name,code,count\n" +
+		"a,08,08\n" +
+		"b,09,09\n" +
+		"c,010,010\n" +
+		"d,007,007\n"
+
+	var got []row
+	if err := UnmarshalString(in, &got); err != nil {
+		t.Fatalf("UnmarshalString failed on zero-padded numbers: %s", err)
+	}
+
+	want := []row{
+		{Name: "a", Code: 8, Count: 8},
+		{Name: "b", Code: 9, Count: 9},
+		{Name: "c", Code: 10, Count: 10},
+		{Name: "d", Code: 7, Count: 7},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("UnmarshalString returned %+v, want %+v", got, want)
+	}
+}
