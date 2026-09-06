@@ -1389,3 +1389,82 @@ func TestUnmarshalZeroPaddedNumbers(t *testing.T) {
 		t.Errorf("UnmarshalString returned %+v, want %+v", got, want)
 	}
 }
+
+type nestedOmitChild struct {
+	Value string `csv:"value,omitempty" json:"value,omitempty"`
+}
+
+type nestedOmitRecord struct {
+	Child *nestedOmitChild `csv:"child,omitempty" json:"child,omitempty"`
+}
+
+func TestUnmarshalNestedPointerOmitEmpty(t *testing.T) {
+	input := []*nestedOmitRecord{{Child: &nestedOmitChild{Value: "present"}}}
+	encoded, err := MarshalString(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var output []*nestedOmitRecord
+	if err := UnmarshalString(encoded, &output); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(input, output) {
+		t.Fatalf("round trip: got %#v, want %#v", output, input)
+	}
+}
+
+func TestNestedPointerDecodeEntryPoints(t *testing.T) {
+	input := "child.value\npresent\n"
+	for _, name := range []string{"slice", "without-headers", "channel", "channel-without-headers", "callback"} {
+		t.Run(name, func(t *testing.T) {
+			var output []*nestedOmitRecord
+			var err error
+			switch name {
+			case "slice":
+				err = UnmarshalString(input, &output)
+			case "without-headers":
+				err = UnmarshalWithoutHeaders(strings.NewReader("present\n"), &output)
+			case "channel", "channel-without-headers":
+				channel := make(chan *nestedOmitRecord, 1)
+				if name == "channel" {
+					err = UnmarshalToChan(strings.NewReader(input), channel)
+				} else {
+					err = UnmarshalToChanWithoutHeaders(strings.NewReader("present\n"), channel)
+				}
+				for record := range channel {
+					output = append(output, record)
+				}
+			case "callback":
+				err = UnmarshalToCallback(strings.NewReader(input), func(record *nestedOmitRecord) {
+					output = append(output, record)
+				})
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(output) != 1 || output[0].Child == nil || output[0].Child.Value != "present" {
+				t.Fatalf("incorrect nested output: %#v", output)
+			}
+		})
+	}
+}
+
+func TestNestedPointerLeafOmission(t *testing.T) {
+	type child struct {
+		Value string  `csv:"value,omitempty"`
+		Empty *string `csv:"empty,omitempty"`
+	}
+	type middle struct {
+		Child *child `csv:"child,omitempty"`
+	}
+	type record struct {
+		Middle *middle `csv:"middle,omitempty"`
+	}
+	var output []record
+	if err := UnmarshalString("middle.child.value,middle.child.empty\npresent,\n", &output); err != nil {
+		t.Fatal(err)
+	}
+	if output[0].Middle.Child.Value != "present" || output[0].Middle.Child.Empty != nil {
+		t.Fatalf("leaf omission changed: %#v", output[0].Middle.Child)
+	}
+}
