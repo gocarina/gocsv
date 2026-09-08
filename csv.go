@@ -117,15 +117,46 @@ func getCSVReader(in io.Reader) CSVReader {
 // --------------------------------------------------------------------------
 // Marshal functions
 
+// Options holds the optional settings understood by the Marshal*WithOptions
+// functions. The zero value reproduces the behaviour of the plain Marshal*
+// functions, so new fields can be added without breaking existing callers.
+type Options struct {
+	// HeaderMappings overrides the header written for a field. Each key is the
+	// header that would normally be written (the field's first csv tag key) and
+	// the value is the header written in its place. Fields not present in the
+	// map keep their default header.
+	//
+	// It has no effect on the functions that omit headers.
+	HeaderMappings map[string]string
+
+	// HeaderPrefix is prepended to the headers that HeaderMappings replaced.
+	// Headers left at their default are never prefixed. It is empty by default,
+	// so mapped values are written verbatim; set it to share one prefix across a
+	// whole mapping instead of repeating it in every value (e.g. "coreTags.").
+	HeaderPrefix string
+}
+
 // MarshalFile saves the interface as CSV in the file.
-func MarshalFile(in interface{}, file *os.File, options Options) (err error) {
-	return Marshal(in, file, options)
+func MarshalFile(in interface{}, file *os.File) (err error) {
+	return Marshal(in, file)
+}
+
+// MarshalFileWithOptions saves the interface as CSV in the file, applying the
+// given options.
+func MarshalFileWithOptions(in interface{}, file *os.File, options Options) (err error) {
+	return MarshalWithOptions(in, file, options)
 }
 
 // MarshalString returns the CSV string from the interface.
 func MarshalString(in interface{}) (out string, err error) {
+	return MarshalStringWithOptions(in, Options{})
+}
+
+// MarshalStringWithOptions returns the CSV string from the interface, applying
+// the given options.
+func MarshalStringWithOptions(in interface{}, options Options) (out string, err error) {
 	bufferString := bytes.NewBufferString(out)
-	if err := Marshal(in, bufferString, Options{}); err != nil {
+	if err := MarshalWithOptions(in, bufferString, options); err != nil {
 		return "", err
 	}
 	return bufferString.String(), nil
@@ -134,7 +165,7 @@ func MarshalString(in interface{}) (out string, err error) {
 // MarshalStringWithoutHeaders returns the CSV string from the interface.
 func MarshalStringWithoutHeaders(in interface{}) (out string, err error) {
 	bufferString := bytes.NewBufferString(out)
-	if err := MarshalWithoutHeaders(in, bufferString, nil); err != nil {
+	if err := MarshalWithoutHeaders(in, bufferString); err != nil {
 		return "", err
 	}
 	return bufferString.String(), nil
@@ -142,25 +173,33 @@ func MarshalStringWithoutHeaders(in interface{}) (out string, err error) {
 
 // MarshalBytes returns the CSV bytes from the interface.
 func MarshalBytes(in interface{}) (out []byte, err error) {
+	return MarshalBytesWithOptions(in, Options{})
+}
+
+// MarshalBytesWithOptions returns the CSV bytes from the interface, applying
+// the given options.
+func MarshalBytesWithOptions(in interface{}, options Options) (out []byte, err error) {
 	bufferString := bytes.NewBuffer(out)
-	if err := Marshal(in, bufferString, Options{}); err != nil {
+	if err := MarshalWithOptions(in, bufferString, options); err != nil {
 		return nil, err
 	}
 	return bufferString.Bytes(), nil
 }
 
-type Options struct {
-	HeaderMappings map[string]string
+// Marshal returns the CSV in writer from the interface.
+func Marshal(in interface{}, out io.Writer) (err error) {
+	return MarshalWithOptions(in, out, Options{})
 }
 
-// Marshal returns the CSV in writer from the interface.
-func Marshal(in interface{}, out io.Writer, options Options) (err error) {
+// MarshalWithOptions returns the CSV in writer from the interface, applying the
+// given options.
+func MarshalWithOptions(in interface{}, out io.Writer, options Options) (err error) {
 	writer := getCSVWriter(out)
 	return writeTo(writer, in, false, options)
 }
 
 // MarshalWithoutHeaders returns the CSV in writer from the interface.
-func MarshalWithoutHeaders(in interface{}, out io.Writer, customTagsHeaderMappings map[string]string) (err error) {
+func MarshalWithoutHeaders(in interface{}, out io.Writer) (err error) {
 	writer := getCSVWriter(out)
 	return writeTo(writer, in, true, Options{})
 }
@@ -177,7 +216,13 @@ func MarshalChanWithoutHeaders(c <-chan interface{}, out CSVWriter) error {
 
 // MarshalCSV returns the CSV in writer from the interface.
 func MarshalCSV(in interface{}, out CSVWriter) (err error) {
-	return writeTo(out, in, false, Options{})
+	return MarshalCSVWithOptions(in, out, Options{})
+}
+
+// MarshalCSVWithOptions returns the CSV in writer from the interface, applying
+// the given options.
+func MarshalCSVWithOptions(in interface{}, out CSVWriter, options Options) (err error) {
+	return writeTo(out, in, false, options)
 }
 
 // MarshalCSVWithoutHeaders returns the CSV in writer from the interface.

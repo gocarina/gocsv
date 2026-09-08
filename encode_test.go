@@ -49,6 +49,53 @@ func Test_writeTo(t *testing.T) {
 	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", "", ""}, lines[2])
 }
 
+func Test_writeTo_headerMappings(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []Sample{
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1},
+	}
+	options := Options{
+		HeaderMappings: map[string]string{
+			"foo": "renamed_foo",
+			"Baz": "renamed_baz",
+		},
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, options); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Mapped fields use their new header, unmapped fields keep the default one.
+	assertLine(t, []string{"renamed_foo", "BAR", "renamed_baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
+	assertLine(t, []string{"f", "1", "baz", "0.1", "", "", ""}, lines[1])
+}
+
+func Test_writeTo_headerMappings_withPrefix(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	s := []Sample{
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1},
+	}
+	options := Options{
+		HeaderMappings: map[string]string{"foo": "renamed_foo"},
+		HeaderPrefix:   "coreTags.",
+	}
+	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, options); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Only the mapped header is prefixed.
+	assertLine(t, []string{"coreTags.renamed_foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
+}
+
 func Test_writeTo_Time(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}

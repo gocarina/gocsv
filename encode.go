@@ -82,16 +82,11 @@ func writeTo(writer CSVWriter, in interface{}, omitHeaders bool, options Options
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
-		if options.HeaderMappings != nil {
-			header := fieldInfo.getFirstKey()
-			if val, ok := options.HeaderMappings[header]; ok {
-				csvHeadersLabels[i] = fmt.Sprintf("coreTags.%s", val)
-			} else {
-				csvHeadersLabels[i] = fieldInfo.getFirstKey()
-			}
-		} else {
-			csvHeadersLabels[i] = fieldInfo.getFirstKey()
+		header := fieldInfo.getFirstKey()
+		if mapped, ok := options.HeaderMappings[header]; ok { // A nil map simply never matches
+			header = options.HeaderPrefix + mapped
 		}
+		csvHeadersLabels[i] = header
 	}
 	if !omitHeaders {
 		if err := writer.Write(csvHeadersLabels); err != nil {

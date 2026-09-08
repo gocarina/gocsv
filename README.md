@@ -171,3 +171,39 @@ func main() {
 }
 
 ```
+
+Custom header names
+=====
+
+Every `Marshal` function has a `WithOptions` counterpart that takes an `Options`
+struct, so you can rename headers at marshal time without changing your struct
+tags. The plain functions are unaffected:
+
+```go
+
+type Client struct {
+    Id   string `csv:"client_id"`
+    Name string `csv:"client_name"`
+}
+
+clients := []Client{{Id: "1", Name: "Jose"}}
+
+// Default headers: "client_id,client_name"
+out, _ := gocsv.MarshalString(&clients)
+
+// Renamed headers: "id,client_name" -- fields left out of the map are unchanged
+out, _ = gocsv.MarshalStringWithOptions(&clients, gocsv.Options{
+    HeaderMappings: map[string]string{"client_id": "id"},
+})
+
+// HeaderPrefix is prepended to the renamed headers only: "coreTags.id,client_name"
+out, _ = gocsv.MarshalStringWithOptions(&clients, gocsv.Options{
+    HeaderMappings: map[string]string{"client_id": "id"},
+    HeaderPrefix:   "coreTags.",
+})
+
+```
+
+The same options are accepted by `MarshalWithOptions`, `MarshalFileWithOptions`,
+`MarshalBytesWithOptions` and `MarshalCSVWithOptions`. They have no effect on the
+`WithoutHeaders` variants, which write no header row at all.

@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/DaminiBansal/gocsv"
+	"github.com/gocarina/gocsv"
 )
 
 type NotUsed struct {
@@ -95,7 +95,7 @@ func main() {
 		},
 	}
 	// Save clients to csv file
-	if err = gocsv.MarshalFile(&clients, clientsFile, gocsv.Options{}); err != nil {
+	if err = gocsv.MarshalFile(&clients, clientsFile); err != nil {
 		panic(err)
 	}
 
