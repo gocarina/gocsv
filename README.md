@@ -124,6 +124,10 @@ type Client struct { // Our example struct with a custom type (DateTime)
 Nested structs
 ---
 
+When decoding nested pointer structs, GoCSV allocates the pointers needed to
+reach each field. An `omitempty` field still omits an empty leaf pointer value;
+it does not prevent allocation of the enclosing structs.
+
 By default, the fields of nested structs are prefixed with the parent field's
 name. For example:
 
