@@ -74,15 +74,14 @@ func Test_writeTo_headerMappings(t *testing.T) {
 	assertLine(t, []string{"f", "1", "baz", "0.1", "", "", ""}, lines[1])
 }
 
-func Test_writeTo_headerMappings_withPrefix(t *testing.T) {
+func Test_writeTo_headerMappings_verbatim(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
 	s := []Sample{
 		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1},
 	}
 	options := Options{
-		HeaderMappings: map[string]string{"foo": "renamed_foo"},
-		HeaderPrefix:   "coreTags.",
+		HeaderMappings: map[string]string{"foo": "nested.renamed_foo"},
 	}
 	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, options); err != nil {
 		t.Fatal(err)
@@ -92,8 +91,8 @@ func Test_writeTo_headerMappings_withPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Only the mapped header is prefixed.
-	assertLine(t, []string{"coreTags.renamed_foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
+	// Mapped values are written exactly as given, so callers can namespace headers.
+	assertLine(t, []string{"nested.renamed_foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
 }
 
 func Test_writeTo_Time(t *testing.T) {

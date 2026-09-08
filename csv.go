@@ -123,17 +123,11 @@ func getCSVReader(in io.Reader) CSVReader {
 type Options struct {
 	// HeaderMappings overrides the header written for a field. Each key is the
 	// header that would normally be written (the field's first csv tag key) and
-	// the value is the header written in its place. Fields not present in the
-	// map keep their default header.
+	// the value is the header written in its place, verbatim. Fields not present
+	// in the map keep their default header.
 	//
 	// It has no effect on the functions that omit headers.
 	HeaderMappings map[string]string
-
-	// HeaderPrefix is prepended to the headers that HeaderMappings replaced.
-	// Headers left at their default are never prefixed. It is empty by default,
-	// so mapped values are written verbatim; set it to share one prefix across a
-	// whole mapping instead of repeating it in every value (e.g. "coreTags.").
-	HeaderPrefix string
 }
 
 // MarshalFile saves the interface as CSV in the file.

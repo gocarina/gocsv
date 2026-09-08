@@ -196,10 +196,9 @@ out, _ = gocsv.MarshalStringWithOptions(&clients, gocsv.Options{
     HeaderMappings: map[string]string{"client_id": "id"},
 })
 
-// HeaderPrefix is prepended to the renamed headers only: "coreTags.id,client_name"
+// Values are written verbatim, so headers can be namespaced: "core.id,client_name"
 out, _ = gocsv.MarshalStringWithOptions(&clients, gocsv.Options{
-    HeaderMappings: map[string]string{"client_id": "id"},
-    HeaderPrefix:   "coreTags.",
+    HeaderMappings: map[string]string{"client_id": "core.id"},
 })
 
 ```

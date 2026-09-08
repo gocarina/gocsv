@@ -84,7 +84,7 @@ func writeTo(writer CSVWriter, in interface{}, omitHeaders bool, options Options
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		header := fieldInfo.getFirstKey()
 		if mapped, ok := options.HeaderMappings[header]; ok { // A nil map simply never matches
-			header = options.HeaderPrefix + mapped
+			header = mapped
 		}
 		csvHeadersLabels[i] = header
 	}
