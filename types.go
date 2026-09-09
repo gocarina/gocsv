@@ -288,7 +288,7 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 					return err
 				}
 				field.SetFloat(f)
-			case reflect.Slice, reflect.Struct:
+			case reflect.Slice, reflect.Array, reflect.Struct:
 				if value == "" {
 					return nil
 				}
