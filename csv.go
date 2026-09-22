@@ -324,7 +324,8 @@ func UnmarshalBytesToChan(in []byte, c interface{}) error {
 }
 
 // UnmarshalToCallback parses the CSV from the reader and send each value to the given func f.
-// The func must look like func(Struct).
+// The func must look like func(Struct). If its last return value is an error,
+// the parser is drained without further callback calls before returning that error.
 func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	valueFunc := reflect.ValueOf(f)
 	t := reflect.TypeOf(f)
@@ -336,9 +337,13 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	go func() {
 		cerr <- UnmarshalToChan(in, c.Interface())
 	}()
+	var callbackErr error
 	for {
 		select {
 		case err := <-cerr:
+			if callbackErr != nil {
+				return callbackErr
+			}
 			return err
 		default:
 		}
@@ -346,15 +351,22 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 		if !notClosed || v.Interface() == nil {
 			break
 		}
+		if callbackErr != nil {
+			continue // Drain the producer without invoking the callback again.
+		}
 		callResults := valueFunc.Call([]reflect.Value{v})
-		// if last returned value from Call() is an error, return it
+		// Preserve a callback error while allowing the producer to finish.
 		if len(callResults) > 0 {
 			if err, ok := callResults[len(callResults)-1].Interface().(error); ok {
-				return err
+				callbackErr = err
 			}
 		}
 	}
-	return <-cerr
+	err := <-cerr
+	if callbackErr != nil {
+		return callbackErr
+	}
+	return err
 }
 
 // UnmarshalDecoderToCallback parses the CSV from the decoder and send each value to the given func f.
