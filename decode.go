@@ -517,6 +517,9 @@ func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int
 			if newcap < 4 {
 				newcap = 4
 			}
+			if newcap < i+1 {
+				newcap = i + 1
+			}
 			newoi := reflect.MakeSlice(oi.Type(), oi.Len(), newcap)
 			reflect.Copy(newoi, oi)
 			oi.Set(newoi)

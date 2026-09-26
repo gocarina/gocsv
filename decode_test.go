@@ -253,6 +253,27 @@ s1,1.1,s2,2.2,s3,3.3,s4,4.4,1,2,3`)
 	}
 }
 
+func TestUnmarshalSliceColumnsOutOfOrder(t *testing.T) {
+	type row struct {
+		ID int   `csv:"id"`
+		V  []int `csv:"v" csv[]:"6"`
+	}
+
+	for _, input := range []string{
+		"id,v[0],v[5]\n1,0,5\n",
+		"id,v[5],v[0]\n1,5,0\n",
+	} {
+		var rows []row
+		if err := UnmarshalString(input, &rows); err != nil {
+			t.Fatalf("UnmarshalString(%q): %v", input, err)
+		}
+		want := []row{{ID: 1, V: []int{0, 0, 0, 0, 0, 5}}}
+		if !reflect.DeepEqual(rows, want) {
+			t.Errorf("UnmarshalString(%q) = %v, want %v", input, rows, want)
+		}
+	}
+}
+
 func Test_readTo_embed_marshal(t *testing.T) {
 	b := bytes.NewBufferString(`foo
 bar`)
