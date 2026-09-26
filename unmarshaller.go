@@ -65,6 +65,9 @@ func validate(um *Unmarshaller, s interface{}, headers []string) error {
 		return err
 	}
 	structInfo := getStructInfo(concreteType) // Get struct info to get CSV annotations.
+	if structInfo.Err != nil {
+		return structInfo.Err
+	}
 	if len(structInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
