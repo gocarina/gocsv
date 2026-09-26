@@ -19,6 +19,11 @@ type SliceSample struct {
 	Slice []int `csv:"Slice"`
 }
 
+type ArraySample struct {
+	Name  string `csv:"Name"`
+	Array [3]int `csv:"Array"`
+}
+
 type SliceStructSample struct {
 	Slice       []SliceStruct  `csv:"s,slice" csv[]:"2"`
 	Slice2      []SliceStruct  `csv:"sliceText"`

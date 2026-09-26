@@ -225,6 +225,41 @@ func Test_readTo_slice(t *testing.T) {
 	}
 }
 
+func Test_readTo_array(t *testing.T) {
+	b := bytes.NewBufferString(`Name,Array
+empty,
+short,"[1, 2]"
+full,"[1, 2, 3]"`)
+	d := newSimpleDecoderFromReader(b)
+	samples := []ArraySample{}
+	if err := readTo(d, &samples); err != nil {
+		t.Fatal(err)
+	}
+	expected := []ArraySample{
+		{Name: "empty", Array: [3]int{}},
+		{Name: "short", Array: [3]int{1, 2}},
+		{Name: "full", Array: [3]int{1, 2, 3}},
+	}
+	if !reflect.DeepEqual(expected, samples) {
+		t.Fatalf("expected %v, got %v", expected, samples)
+	}
+}
+
+func Test_array_round_trip(t *testing.T) {
+	in := []ArraySample{{Name: "full", Array: [3]int{1, 2, 3}}}
+	out, err := MarshalString(&in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back []ArraySample
+	if err := UnmarshalString(out, &back); err != nil {
+		t.Fatalf("cannot unmarshal %q produced by MarshalString: %v", out, err)
+	}
+	if !reflect.DeepEqual(in, back) {
+		t.Fatalf("expected %v, got %v", in, back)
+	}
+}
+
 func Test_readTo_slice_structs(t *testing.T) {
 	b := bytes.NewBufferString(`s[0].string,slice[0].f,slice[1].s,s[1].float,a[0].s,array[0].float,a[1].s,array[1].float,ints[0],ints[1],ints[2]
 s1,1.1,s2,2.2,s3,3.3,s4,4.4,1,2,3`)
