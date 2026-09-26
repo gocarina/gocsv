@@ -206,6 +206,10 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 			if outInner.CanInterface() {
 				fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
 				if withFieldsOK {
+					// Extra columns have no header to pass to the custom unmarshaler.
+					if j >= len(headers) {
+						continue
+					}
 					if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
 						parseError := csv.ParseError{
 							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
@@ -308,6 +312,10 @@ func readEach(decoder SimpleDecoder, errHandler ErrorHandler, c interface{}) err
 			if outInner.CanInterface() {
 				fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
 				if withFieldsOK {
+					// Extra columns have no header to pass to the custom unmarshaler.
+					if j >= len(headers) {
+						continue
+					}
 					if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
 						parseError := csv.ParseError{
 							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays

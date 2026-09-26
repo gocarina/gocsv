@@ -115,7 +115,7 @@ func (um *Unmarshaller) unmarshalRow(row []string, unmatched map[string]string) 
 			if err := setInnerField(&outValue, isPointer, fieldInfo.IndexChain, value, fieldInfo.omitEmpty); err != nil { // Set field of struct
 				return nil, fmt.Errorf("cannot assign field at %v to %s through index chain %v: %v", j, outValue.Type(), fieldInfo.IndexChain, err)
 			}
-		} else if unmatched != nil {
+		} else if unmatched != nil && j < len(um.Headers) {
 			unmatched[um.Headers[j]] = csvColumnContent
 		}
 	}
