@@ -213,6 +213,10 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 		if omitEmpty && value == "" {
 			return nil
 		}
+		if value == "" && field.Type().Elem() == reflect.TypeOf(false) {
+			field.SetZero()
+			return nil
+		}
 		if field.IsNil() {
 			field.Set(reflect.New(field.Type().Elem()))
 		}
