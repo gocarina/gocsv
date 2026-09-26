@@ -1524,3 +1524,17 @@ func TestNestedPointerLeafOmission(t *testing.T) {
 		t.Fatalf("leaf omission changed: %#v", output[0].Middle.Child)
 	}
 }
+
+func TestEmptyBooleanPointerDecodesAsNil(t *testing.T) {
+	type record struct {
+		Name     string `csv:"name"`
+		Optional *bool  `csv:"optional"`
+	}
+	var output []record
+	if err := UnmarshalString("name,optional\nempty,\ntrue,true\nfalse,false\n", &output); err != nil {
+		t.Fatal(err)
+	}
+	if len(output) != 3 || output[0].Optional != nil || output[1].Optional == nil || !*output[1].Optional || output[2].Optional == nil || *output[2].Optional {
+		t.Fatalf("unexpected nullable booleans: %#v", output)
+	}
+}
