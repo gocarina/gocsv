@@ -31,6 +31,9 @@ func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool) err
 	}
 	inInnerWasPointer := inType.Kind() == reflect.Ptr
 	inInnerStructInfo := getStructInfo(inType) // Get the inner struct info to get CSV annotations
+	if inInnerStructInfo.Err != nil {
+		return inInnerStructInfo.Err
+	}
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
@@ -80,6 +83,9 @@ func writeTo(writer CSVWriter, in interface{}, omitHeaders bool) error {
 		return err
 	}
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
+	if inInnerStructInfo.Err != nil {
+		return inInnerStructInfo.Err
+	}
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()

@@ -13,6 +13,7 @@ import (
 
 type structInfo struct {
 	Fields []fieldInfo
+	Err    error
 }
 
 // fieldInfo is a struct field that should be mapped to a CSV column, or vice-versa
@@ -67,14 +68,20 @@ func getStructInfo(rType reflect.Type) *structInfo {
 		return stInfo.(*structInfo)
 	}
 
-	fieldsList := getFieldInfos(rType, []int{}, []string{})
-	stInfo = &structInfo{fieldsList}
+	fieldsList, err := getFieldInfos(rType, []int{}, []string{}, make(map[reflect.Type]bool))
+	stInfo = &structInfo{Fields: fieldsList, Err: err}
 	structInfoCache.Store(rType, stInfo)
 
 	return stInfo.(*structInfo)
 }
 
-func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string) []fieldInfo {
+func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string, ancestors map[reflect.Type]bool) ([]fieldInfo, error) {
+	if ancestors[rType] {
+		return nil, fmt.Errorf("cyclic struct type %s: exclude the recursive field with csv:\"-\"", rType)
+	}
+	ancestors[rType] = true
+	defer delete(ancestors, rType)
+
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -134,7 +141,11 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 			if currFieldInfo != nil {
 				keys = currFieldInfo.keys
 			}
-			fieldsList = append(fieldsList, getFieldInfos(fieldType, indexChain, keys)...)
+			childFields, err := getFieldInfos(fieldType, indexChain, keys, ancestors)
+			if err != nil {
+				return nil, err
+			}
+			fieldsList = append(fieldsList, childFields...)
 			continue
 		}
 
@@ -152,7 +163,10 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 
 			// slices or arrays of Struct get special handling
 			if field.Type.Elem().Kind() == reflect.Struct {
-				fieldInfos := getFieldInfos(field.Type.Elem(), []int{}, []string{})
+				fieldInfos, err := getFieldInfos(field.Type.Elem(), []int{}, []string{}, ancestors)
+				if err != nil {
+					return nil, err
+				}
 
 				// if no special csv[] tag was supplied, just include the field directly
 				if arrayLength == -1 {
@@ -215,7 +229,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 			fieldsList = append(fieldsList, *currFieldInfo)
 		}
 	}
-	return fieldsList
+	return fieldsList, nil
 }
 
 func filterTags(tagName string, indexChain []int, field reflect.StructField) (*fieldInfo, []string) {

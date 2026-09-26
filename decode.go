@@ -164,6 +164,9 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if outInnerStructInfo.Err != nil {
+		return outInnerStructInfo.Err
+	}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
@@ -264,6 +267,9 @@ func readEach(decoder SimpleDecoder, errHandler ErrorHandler, c interface{}) err
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if outInnerStructInfo.Err != nil {
+		return outInnerStructInfo.Err
+	}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
@@ -365,6 +371,9 @@ func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if outInnerStructInfo.Err != nil {
+		return outInnerStructInfo.Err
+	}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
@@ -414,6 +423,9 @@ func readToWithoutHeaders(decoder Decoder, out interface{}) error {
 		return err
 	}
 	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
+	if outInnerStructInfo.Err != nil {
+		return outInnerStructInfo.Err
+	}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
