@@ -241,17 +241,26 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 		if err != nil {
 			return err
 		}
+		if field.OverflowInt(i) {
+			return &strconv.NumError{Func: "ParseInt", Num: value, Err: strconv.ErrRange}
+		}
 		field.SetInt(i)
 	case uint, uint8, uint16, uint32, uint64:
 		ui, err := toUint(value)
 		if err != nil {
 			return err
 		}
+		if field.OverflowUint(ui) {
+			return &strconv.NumError{Func: "ParseUint", Num: value, Err: strconv.ErrRange}
+		}
 		field.SetUint(ui)
 	case float32, float64:
 		f, err := toFloat(value)
 		if err != nil {
 			return err
+		}
+		if field.OverflowFloat(f) {
+			return &strconv.NumError{Func: "ParseFloat", Num: value, Err: strconv.ErrRange}
 		}
 		field.SetFloat(f)
 	default:
@@ -279,17 +288,26 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 				if err != nil {
 					return err
 				}
+				if field.OverflowInt(i) {
+					return &strconv.NumError{Func: "ParseInt", Num: value, Err: strconv.ErrRange}
+				}
 				field.SetInt(i)
 			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				ui, err := toUint(value)
 				if err != nil {
 					return err
 				}
+				if field.OverflowUint(ui) {
+					return &strconv.NumError{Func: "ParseUint", Num: value, Err: strconv.ErrRange}
+				}
 				field.SetUint(ui)
 			case reflect.Float32, reflect.Float64:
 				f, err := toFloat(value)
 				if err != nil {
 					return err
+				}
+				if field.OverflowFloat(f) {
+					return &strconv.NumError{Func: "ParseFloat", Num: value, Err: strconv.ErrRange}
 				}
 				field.SetFloat(f)
 			case reflect.Slice, reflect.Array, reflect.Struct:
