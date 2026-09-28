@@ -1454,6 +1454,40 @@ type nestedOmitRecord struct {
 	Child *nestedOmitChild `csv:"child,omitempty" json:"child,omitempty"`
 }
 
+func TestUnmarshalNumberOutOfRange(t *testing.T) {
+	type smallInt int8
+	type row struct {
+		I8  int8     `csv:"i8"`
+		U8  uint8    `csv:"u8"`
+		I16 *int16   `csv:"i16"`
+		F32 float32  `csv:"f32"`
+		SI  smallInt `csv:"si"`
+	}
+
+	var ok []row
+	if err := UnmarshalString("i8,u8,i16,f32,si\n-128,255,32767,1.5,127\n", &ok); err != nil {
+		t.Fatalf("UnmarshalString failed on in-range values: %s", err)
+	}
+	if ok[0].I8 != -128 || ok[0].U8 != 255 || *ok[0].I16 != 32767 || ok[0].F32 != 1.5 || ok[0].SI != 127 {
+		t.Errorf("UnmarshalString returned %+v", ok[0])
+	}
+
+	for _, in := range []string{
+		"i8,u8,i16,f32,si\n300,0,0,0,0\n",
+		"i8,u8,i16,f32,si\n-129,0,0,0,0\n",
+		"i8,u8,i16,f32,si\n0,256,0,0,0\n",
+		"i8,u8,i16,f32,si\n0,0,40000,0,0\n",
+		"i8,u8,i16,f32,si\n0,0,0,1e39,0\n",
+		"i8,u8,i16,f32,si\n0,0,0,0,128\n",
+	} {
+		var got []row
+		err := UnmarshalString(in, &got)
+		if !errors.Is(err, strconv.ErrRange) {
+			t.Errorf("UnmarshalString(%q) returned %+v, %v; want a range error", in, got, err)
+		}
+	}
+}
+
 func TestUnmarshalNestedPointerOmitEmpty(t *testing.T) {
 	input := []*nestedOmitRecord{{Child: &nestedOmitChild{Value: "present"}}}
 	encoded, err := MarshalString(input)
