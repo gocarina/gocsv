@@ -58,19 +58,19 @@ func removeZeroWidthChars(s string) string {
 	}, s)
 }
 
-var structInfoCache sync.Map
 var structMap = make(map[reflect.Type]*structInfo)
 var structMapMutex sync.RWMutex
 
 func getStructInfo(rType reflect.Type) *structInfo {
-	stInfo, ok := structInfoCache.Load(rType)
+	structInfos := &loadHeaderNormalization().structInfos
+	stInfo, ok := structInfos.Load(rType)
 	if ok {
 		return stInfo.(*structInfo)
 	}
 
 	fieldsList, err := getFieldInfos(rType, []int{}, []string{}, make(map[reflect.Type]bool))
 	stInfo = &structInfo{Fields: fieldsList, Err: err}
-	structInfoCache.Store(rType, stInfo)
+	structInfos.Store(rType, stInfo)
 
 	return stInfo.(*structInfo)
 }
