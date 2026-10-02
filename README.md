@@ -99,7 +99,7 @@ type DateTime struct {
 
 // Convert the internal date as CSV string
 func (date *DateTime) MarshalCSV() (string, error) {
-	return date.Time.Format("20060201"), nil
+	return date.Time.Format("20060102"), nil
 }
 
 // You could also use the standard Stringer interface 
@@ -109,7 +109,7 @@ func (date *DateTime) String() (string) {
 
 // Convert the CSV string as internal date
 func (date *DateTime) UnmarshalCSV(csv string) (err error) {
-	date.Time, err = time.Parse("20060201", csv)
+	date.Time, err = time.Parse("20060102", csv)
 	return err
 }
 
