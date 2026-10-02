@@ -102,6 +102,21 @@ func Test_writeTo_NoHeaders(t *testing.T) {
 	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", "", ""}, lines[1])
 }
 
+func TestMarshalBytesWithoutHeaders(t *testing.T) {
+	s := []Sample{
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1},
+		{Foo: "e", Bar: 3, Baz: "b", Frop: 0.5},
+	}
+	csvContent, err := MarshalBytesWithoutHeaders(&s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if expected := "f,1,baz,0.1,,,\ne,3,b,0.5,,,\n"; string(csvContent) != expected {
+		t.Fatalf("expected: %q\ngot:      %q", expected, csvContent)
+	}
+}
+
 func Test_writeTo_multipleTags(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
