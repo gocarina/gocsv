@@ -149,6 +149,15 @@ func MarshalBytes(in interface{}) (out []byte, err error) {
 	return bufferString.Bytes(), nil
 }
 
+// MarshalBytesWithoutHeaders returns the CSV bytes from the interface.
+func MarshalBytesWithoutHeaders(in interface{}) (out []byte, err error) {
+	bufferString := bytes.NewBuffer(out)
+	if err := MarshalWithoutHeaders(in, bufferString); err != nil {
+		return nil, err
+	}
+	return bufferString.Bytes(), nil
+}
+
 // Marshal returns the CSV in writer from the interface.
 func Marshal(in interface{}, out io.Writer) (err error) {
 	writer := getCSVWriter(out)
