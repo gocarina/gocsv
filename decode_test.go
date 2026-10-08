@@ -1248,6 +1248,141 @@ func TestUnmarshalCSVWithoutHeaders(t *testing.T) {
 	}
 }
 
+func TestUnmarshalToChanWithoutHeadersColumns(t *testing.T) {
+	type row struct {
+		Name    string `csv:"name"`
+		Count   int    `csv:"count"`
+		Ignored string `csv:"-"`
+	}
+	type details struct {
+		Count int `csv:"count"`
+	}
+	type nestedRow struct {
+		Name    string   `csv:"name"`
+		Details *details `csv:"details"`
+	}
+	tests := []struct {
+		name    string
+		input   string
+		channel interface{}
+		want    interface{}
+	}{
+		{
+			name:    "value records with extra columns",
+			input:   "first,1,ignored\nsecond,2,also ignored\n",
+			channel: make(chan row, 2),
+			want:    []row{{Name: "first", Count: 1}, {Name: "second", Count: 2}},
+		},
+		{
+			name:    "pointer records with several extra columns",
+			input:   "first,1,ignored,not a number\nsecond,2,ignored,\n",
+			channel: make(chan *row, 2),
+			want:    []*row{{Name: "first", Count: 1}, {Name: "second", Count: 2}},
+		},
+		{
+			name:    "nested pointer fields with extra columns",
+			input:   "first,1,ignored\nsecond,2,also ignored\n",
+			channel: make(chan nestedRow, 2),
+			want: []nestedRow{
+				{Name: "first", Details: &details{Count: 1}},
+				{Name: "second", Details: &details{Count: 2}},
+			},
+		},
+		{
+			name:    "quoted extra column",
+			input:   "first,1,\"ignored,too\"\n",
+			channel: make(chan row, 1),
+			want:    []row{{Name: "first", Count: 1}},
+		},
+		{
+			name:    "matching columns",
+			input:   "first,1\n",
+			channel: make(chan row, 1),
+			want:    []row{{Name: "first", Count: 1}},
+		},
+		{
+			name:    "fewer columns",
+			input:   "first\n",
+			channel: make(chan row, 1),
+			want:    []row{{Name: "first"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if p := recover(); p != nil {
+					t.Fatalf("headerless channel decoding panicked: %v", p)
+				}
+			}()
+			channel := reflect.ValueOf(tt.channel)
+			batch := reflect.New(reflect.SliceOf(channel.Type().Elem()))
+			if err := UnmarshalWithoutHeaders(strings.NewReader(tt.input), batch.Interface()); err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(batch.Elem().Interface(), tt.want) {
+				t.Fatalf("batch records: got %#v, want %#v", batch.Elem().Interface(), tt.want)
+			}
+			if err := UnmarshalToChanWithoutHeaders(strings.NewReader(tt.input), tt.channel); err != nil {
+				t.Fatal(err)
+			}
+			got := reflect.MakeSlice(batch.Elem().Type(), 0, channel.Len())
+			for {
+				value, ok := channel.Recv()
+				if !ok {
+					break
+				}
+				got = reflect.Append(got, value)
+			}
+			if !reflect.DeepEqual(got.Interface(), tt.want) {
+				t.Fatalf("channel records: got %#v, want %#v", got.Interface(), tt.want)
+			}
+		})
+	}
+}
+
+func TestUnmarshalToChanWithoutHeadersErrors(t *testing.T) {
+	type row struct {
+		Name  string `csv:"name"`
+		Count int    `csv:"count"`
+	}
+	for _, tt := range []struct {
+		name    string
+		input   string
+		wantErr error
+		want    []row
+	}{
+		{
+			name:    "conversion error",
+			input:   "first,not a number,ignored\n",
+			wantErr: strconv.ErrSyntax,
+		},
+		{
+			name:    "reader error after a valid record",
+			input:   "first,1,ignored\nsecond,2\n",
+			wantErr: csv.ErrFieldCount,
+			want:    []row{{Name: "first", Count: 1}},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			channel := make(chan row, 2)
+			err := UnmarshalToChanWithoutHeaders(strings.NewReader(tt.input), channel)
+			if _, ok := err.(*csv.ParseError); !ok {
+				t.Fatalf("got error %v, want *csv.ParseError", err)
+			}
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("got error %v, want %v", err, tt.wantErr)
+			}
+			var got []row
+			for value := range channel {
+				got = append(got, value)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("records before error: got %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestDecodeDefaultValues(t *testing.T) {
 	type defaultValueStruct struct {
 		Foo string `csv:"foo,default=x"`

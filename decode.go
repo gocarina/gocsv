@@ -396,6 +396,9 @@ func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
 		}
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
 		for j, csvColumnContent := range line {
+			if j >= len(outInnerStructInfo.Fields) {
+				break
+			}
 			fieldInfo := outInnerStructInfo.Fields[j]
 			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
 				return &csv.ParseError{
