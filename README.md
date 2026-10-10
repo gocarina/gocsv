@@ -161,6 +161,21 @@ type Bar struct {
 
 produces columns `a, b, x`.
 
+Sanitizing values before decoding
+---
+
+Use a custom `Decoder` with `UnmarshalDecoder` to normalize values before they
+are converted to struct fields. Parse the CSV first, keep its header row, and
+map only the data columns that need cleaning. For example, the
+[runnable sanitizing example](sanitize_example_test.go) maps `N/A` to `NaN`
+only in the `Height` column; quoted names, Unicode, other columns and ordinary
+conversion errors keep their usual behavior.
+
+The example uses `csv.Reader.ReadAll`, so it holds all records in memory. For
+row-by-row processing, implement a `SimpleDecoder` whose `GetCSVRow` maps each
+data row, then use `UnmarshalDecoderToChan` or `UnmarshalDecoderToCallback`. Neither
+approach requires changing the process-wide `SetCSVReader` configuration.
+
 Customizable CSV Reader / Writer
 ---
 
