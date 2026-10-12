@@ -45,12 +45,12 @@ func (date *DateTime) MarshalCSV() (string, error) {
 
 // You could also use the standard Stringer interface
 func (date DateTime) String() string {
-	return date.Time.Format("20060201")
+	return date.Time.Format("20060102")
 }
 
 // Convert the CSV string as internal date
 func (date *DateTime) UnmarshalCSV(csv string) (err error) {
-	date.Time, err = time.Parse("20060201", csv)
+	date.Time, err = time.Parse("20060102", csv)
 	return err
 }
 
