@@ -2,7 +2,6 @@ package gocsv
 
 //Wraps around SafeCSVWriter and makes it thread safe.
 import (
-	"encoding/csv"
 	"sync"
 )
 
@@ -13,13 +12,13 @@ type CSVWriter interface {
 }
 
 type SafeCSVWriter struct {
-	*csv.Writer
+	CSVWriter
 	m sync.Mutex
 }
 
-func NewSafeCSVWriter(original *csv.Writer) *SafeCSVWriter {
+func NewSafeCSVWriter(original CSVWriter) *SafeCSVWriter {
 	return &SafeCSVWriter{
-		Writer: original,
+		CSVWriter: original,
 	}
 }
 
@@ -27,12 +26,12 @@ func NewSafeCSVWriter(original *csv.Writer) *SafeCSVWriter {
 func (w *SafeCSVWriter) Write(row []string) error {
 	w.m.Lock()
 	defer w.m.Unlock()
-	return w.Writer.Write(row)
+	return w.CSVWriter.Write(row)
 }
 
 //Override flush
 func (w *SafeCSVWriter) Flush() {
 	w.m.Lock()
-	w.Writer.Flush()
+	w.CSVWriter.Flush()
 	w.m.Unlock()
 }
