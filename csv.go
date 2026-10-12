@@ -16,6 +16,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // FailIfUnmatchedStructTags indicates whether it is considered an error when there is an unmatched
@@ -47,17 +48,36 @@ type Normalizer func(string) string
 
 type ErrorHandler func(*csv.ParseError) bool
 
-// normalizeName function initially set to a nop Normalizer.
-var normalizeName = DefaultNameNormalizer()
+// headerNormalization is the Normalizer in use together with the struct infos
+// built with it. SetHeaderNormalizer replaces both at once, so it is safe to
+// call while other goroutines are reading or writing CSV.
+type headerNormalization struct {
+	normalize   Normalizer
+	structInfos sync.Map
+}
+
+// currentHeaderNormalization holds a *headerNormalization, initially with a nop Normalizer.
+var currentHeaderNormalization atomic.Value
+
+func init() {
+	currentHeaderNormalization.Store(&headerNormalization{normalize: DefaultNameNormalizer()})
+}
+
+func loadHeaderNormalization() *headerNormalization {
+	return currentHeaderNormalization.Load().(*headerNormalization)
+}
+
+func normalizeName(name string) string {
+	return loadHeaderNormalization().normalize(name)
+}
 
 // DefaultNameNormalizer is a nop Normalizer.
 func DefaultNameNormalizer() Normalizer { return func(s string) string { return s } }
 
 // SetHeaderNormalizer sets the normalizer used to normalize struct and header field names.
 func SetHeaderNormalizer(f Normalizer) {
-	normalizeName = f
-	// Need to clear the cache hen the header normalizer changes.
-	structInfoCache = sync.Map{}
+	// The struct infos are rebuilt from scratch, as they hold normalized names.
+	currentHeaderNormalization.Store(&headerNormalization{normalize: f})
 }
 
 // --------------------------------------------------------------------------

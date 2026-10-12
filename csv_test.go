@@ -2,6 +2,8 @@ package gocsv
 
 import (
 	"errors"
+	"strings"
+	"sync"
 	"testing"
 )
 
@@ -23,6 +25,36 @@ func TestUnmarshalToCallback_ReaderError(t *testing.T) {
 	if !errors.Is(err, readerErr) {
 		t.Error("UnmarshalToCallbackWithError should return first reader error")
 	}
+}
+
+func TestSetHeaderNormalizerWhileUnmarshaling(t *testing.T) {
+	defer SetHeaderNormalizer(DefaultNameNormalizer())
+
+	type row struct {
+		ID   string `csv:"id"`
+		Name string `csv:"name"`
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			SetHeaderNormalizer(strings.ToLower)
+		}()
+		go func() {
+			defer wg.Done()
+			var rows []row
+			if err := UnmarshalString("id,name\n1,foo\n", &rows); err != nil {
+				t.Error(err)
+				return
+			}
+			if len(rows) != 1 || rows[0].ID != "1" || rows[0].Name != "foo" {
+				t.Errorf("unexpected rows: %+v", rows)
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 type errorReader struct{}
