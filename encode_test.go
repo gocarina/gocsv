@@ -491,6 +491,25 @@ func Test_MarshalChan_ClosedChannel(t *testing.T) {
 	}
 }
 
+func TestMarshalChanInvalidLaterValue(t *testing.T) {
+	for name, marshal := range map[string]func(<-chan interface{}, CSVWriter) error{
+		"with headers":    MarshalChan,
+		"without headers": MarshalChanWithoutHeaders,
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := make(chan interface{}, 2)
+			c <- Sample{Foo: "valid"}
+			c <- "invalid"
+			close(c)
+
+			err := marshal(c, NewSafeCSVWriter(csv.NewWriter(&bytes.Buffer{})))
+			if err == nil || !strings.Contains(err.Error(), "cannot use string") {
+				t.Fatalf("expected an error for the string value, got %v", err)
+			}
+		})
+	}
+}
+
 // TestRenamedTypes tests for marshaling functions on redefined basic types.
 func TestRenamedTypesMarshal(t *testing.T) {
 	samples := []RenamedSample{

@@ -61,8 +61,8 @@ func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool) err
 		return err
 	}
 	for v := range c {
-		val, _ := getConcreteReflectValueAndType(v) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-		if err := ensureStructOrPtr(inType); err != nil {
+		val, valType := getConcreteReflectValueAndType(v) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
+		if err := ensureStructOrPtr(valType); err != nil {
 			return err
 		}
 		if err := write(val); err != nil {
