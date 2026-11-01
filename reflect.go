@@ -129,8 +129,8 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 					for _, ckey := range currFieldInfo.keys {
 						keys = append(keys, normalizeName(fmt.Sprintf("%s%s%s", pkey, FieldsCombiner, ckey)))
 					}
-					currFieldInfo.keys = keys
 				}
+				currFieldInfo.keys = keys
 			}
 		}
 
