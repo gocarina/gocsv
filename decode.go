@@ -199,30 +199,28 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		}
 	}
 
-	var withFieldsOK bool
-	var fieldTypeUnmarshallerWithKeys TypeUnmarshalCSVWithFields
-
 	for i, csvRow := range body {
-		objectIface := reflect.New(outValue.Index(i).Type()).Interface()
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		objectIface := outInner.Interface()
+		if !outInnerWasPointer {
+			objectIface = outInner.Addr().Interface()
+		}
+		fieldTypeUnmarshallerWithKeys, withFieldsOK := objectIface.(TypeUnmarshalCSVWithFields)
 		for j, csvColumnContent := range csvRow {
-			if outInner.CanInterface() {
-				fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
-				if withFieldsOK {
-					// Extra columns have no header to pass to the custom unmarshaler.
-					if j >= len(headers) {
-						continue
-					}
-					if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
-						parseError := csv.ParseError{
-							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-							Column: j + 1,
-							Err:    err,
-						}
-						return &parseError
-					}
+			if withFieldsOK {
+				// Extra columns have no header to pass to the custom unmarshaler.
+				if j >= len(headers) {
 					continue
 				}
+				if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
+					parseError := csv.ParseError{
+						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+						Column: j + 1,
+						Err:    err,
+					}
+					return &parseError
+				}
+				continue
 			}
 
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
@@ -241,11 +239,6 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 					}
 				}
 			}
-		}
-
-		if withFieldsOK {
-			reflectedObject := reflect.ValueOf(objectIface)
-			outInner = reflectedObject.Elem()
 		}
 
 		outValue.Index(i).Set(outInner)
@@ -300,12 +293,8 @@ func readEach(decoder SimpleDecoder, errHandler ErrorHandler, c interface{}) err
 		}
 	}
 
-	var withFieldsOK bool
-	var fieldTypeUnmarshallerWithKeys TypeUnmarshalCSVWithFields
-
 	i := 0
 	for {
-		objectIface := reflect.New(outValue.Type().Elem()).Interface()
 		line, err := decoder.GetCSVRow()
 		if err == io.EOF {
 			break
@@ -313,26 +302,28 @@ func readEach(decoder SimpleDecoder, errHandler ErrorHandler, c interface{}) err
 			return err
 		}
 		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		objectIface := outInner.Interface()
+		if !outInnerWasPointer {
+			objectIface = outInner.Addr().Interface()
+		}
+		fieldTypeUnmarshallerWithKeys, withFieldsOK := objectIface.(TypeUnmarshalCSVWithFields)
 		for j, csvColumnContent := range line {
 
-			if outInner.CanInterface() {
-				fieldTypeUnmarshallerWithKeys, withFieldsOK = objectIface.(TypeUnmarshalCSVWithFields)
-				if withFieldsOK {
-					// Extra columns have no header to pass to the custom unmarshaler.
-					if j >= len(headers) {
-						continue
-					}
-					if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
-						parseError := csv.ParseError{
-							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-							Column: j + 1,
-							Err:    err,
-						}
-						return &parseError
-					}
-
+			if withFieldsOK {
+				// Extra columns have no header to pass to the custom unmarshaler.
+				if j >= len(headers) {
 					continue
 				}
+				if err := fieldTypeUnmarshallerWithKeys.UnmarshalCSVWithFields(headers[j], csvColumnContent); err != nil {
+					parseError := csv.ParseError{
+						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+						Column: j + 1,
+						Err:    err,
+					}
+					return &parseError
+				}
+
+				continue
 			}
 
 			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
@@ -354,11 +345,6 @@ func readEach(decoder SimpleDecoder, errHandler ErrorHandler, c interface{}) err
 					}
 				}
 			}
-		}
-
-		if withFieldsOK {
-			reflectedObject := reflect.ValueOf(objectIface)
-			outInner = reflectedObject.Elem()
 		}
 
 		outValue.Send(outInner)
