@@ -12,6 +12,37 @@ import (
 	"time"
 )
 
+func TestUnmarshalUnsignedDecimals(t *testing.T) {
+	testCases := []struct {
+		input string
+		want  uint64
+		err   error
+	}{
+		{"9007199254740993.0", 9007199254740993, nil},
+		{"18446744073709551615.0", 18446744073709551615, nil},
+		{"18446744073709551615.9", 18446744073709551615, nil},
+		{"-0.99999999999999999999", 0, nil},
+		{"1.0e-9999999999999999999", 0, nil},
+		{"18446744073709551616.0", 0, strconv.ErrRange},
+		{"-1.0", 0, strconv.ErrRange},
+		{"0b1.1", 0, strconv.ErrSyntax},
+	}
+	for _, test := range testCases {
+		t.Run(test.input, func(t *testing.T) {
+			var rows []struct {
+				Value uint64 `csv:"value"`
+			}
+			err := UnmarshalString("value\n"+test.input+"\n", &rows)
+			if !errors.Is(err, test.err) {
+				t.Fatalf("UnmarshalString returned %v, want %v", err, test.err)
+			}
+			if err == nil && (len(rows) != 1 || rows[0].Value != test.want) {
+				t.Fatalf("UnmarshalString returned %+v, want %d", rows, test.want)
+			}
+		})
+	}
+}
+
 func Test_readTo(t *testing.T) {
 	blah := 0
 	sptr := "*string"

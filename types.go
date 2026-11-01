@@ -3,6 +3,7 @@ package gocsv
 import (
 	"encoding"
 	"fmt"
+	"math/big"
 	"reflect"
 	"strconv"
 	"strings"
@@ -159,11 +160,26 @@ func toUint(in interface{}) (uint64, error) {
 
 		// support the float input
 		if strings.Contains(s, ".") {
-			f, err := strconv.ParseFloat(s, 64)
+			parsed, err := strconv.ParseFloat(s, 64)
 			if err != nil {
 				return 0, err
 			}
-			return uint64(f), nil
+			if parsed == 0 {
+				return 0, nil
+			}
+			// Retain all uint64 bits and truncate fractions without rounding up.
+			f, _, err := big.ParseFloat(s, 0, 64, big.ToZero)
+			if err != nil {
+				return 0, err
+			}
+			if f.Sign() < 0 && f.MantExp(nil) <= 0 {
+				return 0, nil
+			}
+			if f.Sign() < 0 || f.MantExp(nil) > 64 {
+				return 0, &strconv.NumError{Func: "ParseUint", Num: s, Err: strconv.ErrRange}
+			}
+			u, _ := f.Uint64()
+			return u, nil
 		}
 		// base 10, see toInt
 		return strconv.ParseUint(s, 10, 64)
