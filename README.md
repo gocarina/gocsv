@@ -176,6 +176,9 @@ row-by-row processing, implement a `SimpleDecoder` whose `GetCSVRow` maps each
 data row, then use `UnmarshalDecoderToChan` or `UnmarshalDecoderToCallback`. Neither
 approach requires changing the process-wide `SetCSVReader` configuration.
 
+For a CSV without a header row, use `UnmarshalToCallbackWithoutHeaders`.
+It maps columns by struct field order and calls the callback for the first record as well.
+
 Customizable CSV Reader / Writer
 ---
 
