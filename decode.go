@@ -388,7 +388,7 @@ func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
 			fieldInfo := outInnerStructInfo.Fields[j]
 			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
 				return &csv.ParseError{
-					Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+					Line:   i + 1,
 					Column: j + 1,
 					Err:    err,
 				}
