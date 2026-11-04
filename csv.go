@@ -352,6 +352,38 @@ func UnmarshalBytesToChan(in []byte, c interface{}) error {
 	return UnmarshalToChan(bytes.NewReader(in), c)
 }
 
+// producerPanic carries a panic from the goroutine that decodes the CSV,
+// so the caller can raise it again in its own goroutine.
+type producerPanic struct{ value interface{} }
+
+func (p *producerPanic) Error() string {
+	return fmt.Sprintf("gocsv: panic while decoding: %v", p.value)
+}
+
+// goUnmarshal runs fn in a new goroutine and returns the channel that gets its error.
+// A panic in fn is sent on that channel instead of ending the process; see rethrow.
+func goUnmarshal(fn func() error) chan error {
+	cerr := make(chan error)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				cerr <- &producerPanic{value: r}
+			}
+		}()
+		cerr <- fn()
+	}()
+	return cerr
+}
+
+// rethrow panics with the original value if err came from a panic in goUnmarshal,
+// so callers can recover it like a panic from Unmarshal. Other errors are returned as is.
+func rethrow(err error) error {
+	if p, ok := err.(*producerPanic); ok {
+		panic(p.value)
+	}
+	return err
+}
+
 // UnmarshalToCallback parses the CSV from the reader and send each value to the given func f.
 // The func must look like func(Struct). If its last return value is an error,
 // the parser is drained without further callback calls before returning that error.
@@ -361,15 +393,13 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	if t.NumIn() != 1 {
 		return fmt.Errorf("the given function must have exactly one parameter")
 	}
-	cerr := make(chan error)
 	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
-	go func() {
-		cerr <- UnmarshalToChan(in, c.Interface())
-	}()
+	cerr := goUnmarshal(func() error { return UnmarshalToChan(in, c.Interface()) })
 	var callbackErr error
 	for {
 		select {
 		case err := <-cerr:
+			err = rethrow(err)
 			if callbackErr != nil {
 				return callbackErr
 			}
@@ -391,7 +421,7 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 			}
 		}
 	}
-	err := <-cerr
+	err := rethrow(<-cerr)
 	if callbackErr != nil {
 		return callbackErr
 	}
@@ -406,14 +436,12 @@ func UnmarshalDecoderToCallback(in SimpleDecoder, f interface{}) error {
 	if t.NumIn() != 1 {
 		return fmt.Errorf("the given function must have exactly one parameter")
 	}
-	cerr := make(chan error)
 	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
-	go func() {
-		cerr <- UnmarshalDecoderToChan(in, c.Interface())
-	}()
+	cerr := goUnmarshal(func() error { return UnmarshalDecoderToChan(in, c.Interface()) })
 	for {
 		select {
 		case err := <-cerr:
+			err = rethrow(err)
 			return err
 		default:
 		}
@@ -423,7 +451,7 @@ func UnmarshalDecoderToCallback(in SimpleDecoder, f interface{}) error {
 		}
 		valueFunc.Call([]reflect.Value{v})
 	}
-	return <-cerr
+	return rethrow(<-cerr)
 }
 
 // UnmarshalBytesToCallback parses the CSV from the bytes and send each value to the given func f.
@@ -458,16 +486,14 @@ func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
 		return fmt.Errorf("the given function must only return error")
 	}
 
-	cerr := make(chan error)
 	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
-	go func() {
-		cerr <- UnmarshalToChan(in, c.Interface())
-	}()
+	cerr := goUnmarshal(func() error { return UnmarshalToChan(in, c.Interface()) })
 
 	var fErr error
 	for {
 		select {
 		case err := <-cerr:
+			err = rethrow(err)
 			if err != nil {
 				return err
 			}
@@ -476,7 +502,7 @@ func UnmarshalToCallbackWithError(in io.Reader, f interface{}) error {
 		}
 		v, notClosed := c.Recv()
 		if !notClosed || v.Interface() == nil {
-			if err := <-cerr; err != nil {
+			if err := rethrow(<-cerr); err != nil {
 				fErr = err
 			}
 			break
