@@ -364,9 +364,9 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 				return "false", nil
 			}
 		case int, int8, int16, int32, int64:
-			return fmt.Sprintf("%v", field.Int()), nil
+			return strconv.FormatInt(field.Int(), 10), nil
 		case uint, uint8, uint16, uint32, uint64:
-			return fmt.Sprintf("%v", field.Uint()), nil
+			return strconv.FormatUint(field.Uint(), 10), nil
 		case float32:
 			str, err = toString(float32(field.Float()))
 			if err != nil {
