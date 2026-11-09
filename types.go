@@ -224,12 +224,20 @@ func toFloat(in interface{}) (float64, error) {
 	return 0, fmt.Errorf("No known conversion from " + inValue.Type().String() + " to float")
 }
 
+// isOnlyTextUnmarshaler reports whether t decodes through UnmarshalText, which
+// for types like time.Time rejects an empty string. A TypeUnmarshaller decides
+// for itself what an empty cell means.
+func isOnlyTextUnmarshaler(t reflect.Type) bool {
+	return t.Implements(reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()) &&
+		!t.Implements(reflect.TypeOf((*TypeUnmarshaller)(nil)).Elem())
+}
+
 func setField(field reflect.Value, value string, omitEmpty bool) error {
 	if field.Kind() == reflect.Ptr {
 		if omitEmpty && value == "" {
 			return nil
 		}
-		if value == "" && field.Type().Elem() == reflect.TypeOf(false) {
+		if value == "" && (field.Type().Elem() == reflect.TypeOf(false) || isOnlyTextUnmarshaler(field.Type())) {
 			field.SetZero()
 			return nil
 		}

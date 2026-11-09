@@ -1738,3 +1738,18 @@ func TestEmptyBooleanPointerDecodesAsNil(t *testing.T) {
 		t.Fatalf("unexpected nullable booleans: %#v", output)
 	}
 }
+
+func TestUnmarshalEmptyCellLeavesTimePointerNil(t *testing.T) {
+	type row struct {
+		ID int        `csv:"id"`
+		At *time.Time `csv:"at"`
+	}
+
+	var rows []row
+	if err := UnmarshalString("id,at\n1,2024-01-02T00:00:00Z\n2,\n", &rows); err != nil {
+		t.Fatal(err)
+	}
+	if rows[0].At == nil || rows[1].At != nil {
+		t.Fatalf("got %+v", rows)
+	}
+}
