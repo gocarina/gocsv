@@ -199,6 +199,15 @@ func toUint(in interface{}) (uint64, error) {
 }
 
 func toFloat(in interface{}) (float64, error) {
+	return toFloatBits(in, 64)
+}
+
+// toFloatBits converts in to a float that fits in bitSize (32 or 64) bits.
+// Parsing a string at the field's own size matters at the edges: strconv
+// prints math.MaxFloat32 as 3.4028235e+38, which reads back as MaxFloat32 at
+// 32 bits but is out of range once parsed as a float64 and checked against
+// the float32 limit.
+func toFloatBits(in interface{}, bitSize int) (float64, error) {
 	inValue := reflect.ValueOf(in)
 
 	switch inValue.Kind() {
@@ -208,7 +217,7 @@ func toFloat(in interface{}) (float64, error) {
 			return 0, nil
 		}
 		s = strings.Replace(s, ",", ".", -1)
-		return strconv.ParseFloat(s, 64)
+		return strconv.ParseFloat(s, bitSize)
 	case reflect.Bool:
 		if inValue.Bool() {
 			return 1, nil
@@ -271,7 +280,7 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 		}
 		field.SetUint(ui)
 	case float32, float64:
-		f, err := toFloat(value)
+		f, err := toFloatBits(value, field.Type().Bits())
 		if err != nil {
 			return err
 		}
@@ -318,7 +327,7 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 				}
 				field.SetUint(ui)
 			case reflect.Float32, reflect.Float64:
-				f, err := toFloat(value)
+				f, err := toFloatBits(value, field.Type().Bits())
 				if err != nil {
 					return err
 				}

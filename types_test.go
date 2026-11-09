@@ -1,6 +1,7 @@
 package gocsv
 
 import (
+	"math"
 	"reflect"
 	"testing"
 )
@@ -192,5 +193,47 @@ func TestToUintLeadingZeros(t *testing.T) {
 		if out != item.result {
 			t.Errorf("toUint(%q) = %d, want %d", item.field, out, item.result)
 		}
+	}
+}
+
+func TestFloat32Extremes(t *testing.T) {
+	type row struct {
+		F float32 `csv:"f"`
+	}
+
+	// strconv's shortest representation of math.MaxFloat32 reads back as the
+	// same float32 when parsed at 32 bits, but is above MaxFloat32 when parsed
+	// at 64 bits; it must be accepted, as encoding/json and csvutil do.
+	rows := []row{}
+	if err := UnmarshalString("f\n3.4028235E+38\n-3.4028235E+38\n1E-45\n340282350000000000000000000000000000000\n", &rows); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []float32{math.MaxFloat32, -math.MaxFloat32, math.SmallestNonzeroFloat32, math.MaxFloat32}
+	if len(rows) != len(want) {
+		t.Fatalf("expected %d rows, got %d", len(want), len(rows))
+	}
+	for i, w := range want {
+		if rows[i].F != w {
+			t.Errorf("row %d: expected %v, got %v", i, w, rows[i].F)
+		}
+	}
+
+	// values that do not fit in a float32 are still rejected
+	var bad []row
+	if err := UnmarshalString("f\n3.4028236E+38\n", &bad); err == nil {
+		t.Errorf("expected a range error for 3.4028236E+38, got %v", bad)
+	}
+
+	// the library's own output round-trips
+	out, err := MarshalString(&[]row{{F: math.MaxFloat32}, {F: -math.MaxFloat32}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back []row
+	if err := UnmarshalString(out, &back); err != nil {
+		t.Fatalf("could not read own output %q: %v", out, err)
+	}
+	if len(back) != 2 || back[0].F != math.MaxFloat32 || back[1].F != -math.MaxFloat32 {
+		t.Errorf("round trip changed the values: %v", back)
 	}
 }
