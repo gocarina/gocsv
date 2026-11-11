@@ -2,6 +2,7 @@ package gocsv
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -41,6 +42,44 @@ func TestCallbackErrorDrainsParser(t *testing.T) {
 			case <-reader.eof:
 			default:
 				t.Fatal("parser was abandoned before reaching EOF")
+			}
+		})
+	}
+}
+
+type callbackPanicRecord struct {
+	Err error `csv:"err"`
+}
+
+func recoverValue(f func()) (v interface{}) {
+	defer func() { v = recover() }()
+	f()
+	return nil
+}
+
+func TestCallbackPanicReachesCaller(t *testing.T) {
+	const in = "err\nx\n"
+	want := recoverValue(func() {
+		var rows []callbackPanicRecord
+		_ = UnmarshalString(in, &rows)
+	})
+	if want == nil {
+		t.Fatal("Unmarshal did not panic")
+	}
+	for name, f := range map[string]func(){
+		"UnmarshalToCallback": func() {
+			_ = UnmarshalStringToCallback(in, func(callbackPanicRecord) {})
+		},
+		"UnmarshalDecoderToCallback": func() {
+			_ = UnmarshalDecoderToCallback(newSimpleDecoderFromReader(strings.NewReader(in)), func(callbackPanicRecord) {})
+		},
+		"UnmarshalToCallbackWithError": func() {
+			_ = UnmarshalStringToCallbackWithError(in, func(callbackPanicRecord) error { return nil })
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := recoverValue(f); fmt.Sprint(got) != fmt.Sprint(want) {
+				t.Fatalf("got panic %v, want %v", got, want)
 			}
 		})
 	}
