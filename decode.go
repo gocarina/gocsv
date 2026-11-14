@@ -481,6 +481,12 @@ func ensureOutCapacity(out *reflect.Value, csvLen int) error {
 			return fmt.Errorf("slice capacity problem and is not addressable (did you forget &?)")
 		} else if out.CanAddr() && out.Len() < csvLen-1 {
 			out.Set(reflect.MakeSlice(out.Type(), csvLen-1, csvLen-1)) // Slice is not big enough, so grows it
+		} else if out.CanAddr() && out.Len() > csvLen-1 {
+			zero := reflect.Zero(out.Type().Elem())
+			for i := csvLen - 1; i < out.Len(); i++ {
+				out.Index(i).Set(zero)
+			}
+			out.SetLen(csvLen - 1)
 		}
 	}
 	return nil
