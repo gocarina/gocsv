@@ -43,6 +43,41 @@ func TestUnmarshalUnsignedDecimals(t *testing.T) {
 	}
 }
 
+func TestUnmarshalTruncatesReusedSlice(t *testing.T) {
+	type row struct {
+		Name  string `csv:"name"`
+		Value int    `csv:"value"`
+	}
+	rows := []row{}
+	if err := UnmarshalString("name,value\nold-a,1\nold-b,2\nold-c,3\n", &rows); err != nil {
+		t.Fatal(err)
+	}
+	backing := rows[:3]
+	if err := UnmarshalString("name,value\nnew,7\n", &rows); err != nil {
+		t.Fatal(err)
+	}
+	if want := []row{{"new", 7}}; !reflect.DeepEqual(rows, want) {
+		t.Fatalf("got %+v, want %+v", rows, want)
+	}
+	if backing[1] != (row{}) || backing[2] != (row{}) {
+		t.Fatalf("truncated elements not cleared: %+v", backing)
+	}
+	if err := UnmarshalString("name,value\n", &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("header-only CSV: got %+v, want empty", rows)
+	}
+
+	rows = []row{{"old-a", 1}, {"old-b", 2}}
+	if err := UnmarshalWithoutHeaders(strings.NewReader("new,7\n"), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if want := []row{{"new", 7}}; !reflect.DeepEqual(rows, want) {
+		t.Fatalf("without headers: got %+v, want %+v", rows, want)
+	}
+}
+
 func Test_readTo(t *testing.T) {
 	blah := 0
 	sptr := "*string"
