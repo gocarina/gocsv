@@ -1827,3 +1827,18 @@ func TestUnmarshalEmptyCellLeavesTimePointerNil(t *testing.T) {
 		t.Fatalf("got %+v", rows)
 	}
 }
+
+func TestUnmarshalInterfaceField(t *testing.T) {
+	type record struct {
+		Name  string      `csv:"name"`
+		Value interface{} `csv:"value"`
+	}
+	var output []record
+	if err := UnmarshalString("name,value\nx,1\n", &output); err != nil {
+		t.Fatal(err)
+	}
+	want := []record{{Name: "x", Value: "1"}}
+	if !reflect.DeepEqual(output, want) {
+		t.Fatalf("got %#v, want %#v", output, want)
+	}
+}

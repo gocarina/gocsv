@@ -256,6 +256,14 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 		field = field.Elem()
 	}
 
+	if field.Kind() == reflect.Interface && field.Type().NumMethod() == 0 {
+		if omitEmpty && value == "" {
+			return nil
+		}
+		field.Set(reflect.ValueOf(value))
+		return nil
+	}
+
 	switch field.Interface().(type) {
 	case string:
 		s, err := toString(value)
