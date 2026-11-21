@@ -794,6 +794,45 @@ ff,gg,22,hh,ii,jj`)
 	}
 }
 
+func TestUnmarshalToCallbackWithoutHeaders(t *testing.T) {
+	var got []Sample
+	err := UnmarshalToCallbackWithoutHeaders(strings.NewReader("\"first, row\",1\nsecond,2\n"), func(row *Sample) {
+		got = append(got, *row)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Sample{{Foo: "first, row", Bar: 1}, {Foo: "second", Bar: 2}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+}
+
+func TestUnmarshalToCallbackWithoutHeadersErrors(t *testing.T) {
+	calls := 0
+	countRow := func(Sample) { calls++ }
+	err := UnmarshalToCallbackWithoutHeaders(strings.NewReader(""), countRow)
+	if !errors.Is(err, ErrEmptyCSVFile) || calls != 0 {
+		t.Fatalf("empty input: got %v and %d calls", err, calls)
+	}
+
+	err = UnmarshalToCallbackWithoutHeaders(strings.NewReader("first,1\nsecond,invalid\n"), countRow)
+	var parseErr *csv.ParseError
+	if !errors.As(err, &parseErr) || !errors.Is(err, strconv.ErrSyntax) || parseErr.Line != 2 || calls != 1 {
+		t.Fatalf("second record: got %v and %d calls", err, calls)
+	}
+
+	stop := errors.New("stop")
+	calls = 0
+	err = UnmarshalToCallbackWithoutHeaders(strings.NewReader("first,1\nsecond,2\nthird,invalid\n"), func(Sample) error {
+		calls++
+		return stop
+	})
+	if err != stop || calls != 1 {
+		t.Fatalf("callback error: got %v and %d calls", err, calls)
+	}
+}
+
 // TestRenamedTypes tests for unmarshaling functions on redefined basic types.
 func TestRenamedTypesUnmarshal(t *testing.T) {
 	// Set different csv field separator to enable comma in floats

@@ -356,30 +356,42 @@ func UnmarshalBytesToChan(in []byte, c interface{}) error {
 // The func must look like func(Struct). If its last return value is an error,
 // the parser is drained without further callback calls before returning that error.
 func UnmarshalToCallback(in io.Reader, f interface{}) error {
+	return unmarshalToCallback(in, f, false)
+}
+
+// UnmarshalToCallbackWithoutHeaders decodes every record, including the first,
+// by struct field order. It accepts the same callbacks as UnmarshalToCallback.
+// An empty CSV returns ErrEmptyCSVFile without calling f.
+func UnmarshalToCallbackWithoutHeaders(in io.Reader, f interface{}) error {
+	return unmarshalToCallback(in, f, true)
+}
+
+func unmarshalToCallback(in io.Reader, f interface{}, withoutHeaders bool) error {
 	valueFunc := reflect.ValueOf(f)
-	t := reflect.TypeOf(f)
+	if valueFunc.Kind() != reflect.Func || valueFunc.IsNil() {
+		return fmt.Errorf("the given callback must be a non-nil function")
+	}
+	t := valueFunc.Type()
 	if t.NumIn() != 1 {
 		return fmt.Errorf("the given function must have exactly one parameter")
+	}
+	readRows := UnmarshalToChan
+	if withoutHeaders {
+		readRows = UnmarshalToChanWithoutHeaders
 	}
 	cerr := make(chan error)
 	c := reflect.MakeChan(reflect.ChanOf(reflect.BothDir, t.In(0)), 0)
 	go func() {
-		cerr <- UnmarshalToChan(in, c.Interface())
+		cerr <- readRows(in, c.Interface())
 	}()
 	var callbackErr error
+	seenRow := false
 	for {
-		select {
-		case err := <-cerr:
-			if callbackErr != nil {
-				return callbackErr
-			}
-			return err
-		default:
-		}
-		v, notClosed := c.Recv()
-		if !notClosed || v.Interface() == nil {
+		v, ok := c.Recv()
+		if !ok {
 			break
 		}
+		seenRow = true
 		if callbackErr != nil {
 			continue // Drain the producer without invoking the callback again.
 		}
@@ -394,6 +406,9 @@ func UnmarshalToCallback(in io.Reader, f interface{}) error {
 	err := <-cerr
 	if callbackErr != nil {
 		return callbackErr
+	}
+	if err == nil && withoutHeaders && !seenRow {
+		return ErrEmptyCSVFile
 	}
 	return err
 }
