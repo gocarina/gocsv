@@ -163,15 +163,14 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 
 			// slices or arrays of Struct get special handling
 			if field.Type.Elem().Kind() == reflect.Struct {
-				fieldInfos, err := getFieldInfos(field.Type.Elem(), []int{}, []string{}, ancestors)
-				if err != nil {
-					return nil, err
-				}
-
 				// if no special csv[] tag was supplied, just include the field directly
 				if arrayLength == -1 {
 					fieldsList = append(fieldsList, *currFieldInfo)
 				} else {
+					fieldInfos, err := getFieldInfos(field.Type.Elem(), []int{}, []string{}, ancestors)
+					if err != nil {
+						return nil, err
+					}
 					// When the field is a slice/array of structs, create a fieldInfo for each index and each field
 					for idx := 0; idx < arrayLength; idx++ {
 						// copy index chain and append array index
