@@ -1827,3 +1827,56 @@ func TestUnmarshalEmptyCellLeavesTimePointerNil(t *testing.T) {
 		t.Fatalf("got %+v", rows)
 	}
 }
+
+func TestDecodeDefaultValuesWithoutHeaders(t *testing.T) {
+	type row struct {
+		Name string `csv:"name"`
+		Qty  int    `csv:"qty,default=42"`
+		Tier string `csv:"tier,default=basic"`
+	}
+	want := row{Name: "alice", Qty: 42, Tier: "basic"}
+
+	t.Run("UnmarshalWithoutHeaders", func(t *testing.T) {
+		var out []row
+		if err := UnmarshalWithoutHeaders(strings.NewReader("alice,,\n"), &out); err != nil {
+			t.Fatal(err)
+		}
+		if len(out) != 1 || out[0] != want {
+			t.Fatalf("expected %+v, got %+v", want, out)
+		}
+	})
+
+	t.Run("UnmarshalWithoutHeadersPointerRows", func(t *testing.T) {
+		var out []*row
+		if err := UnmarshalWithoutHeaders(strings.NewReader("alice,,\n"), &out); err != nil {
+			t.Fatal(err)
+		}
+		if len(out) != 1 || *out[0] != want {
+			t.Fatalf("expected %+v, got %+v", want, out)
+		}
+	})
+
+	t.Run("UnmarshalToChanWithoutHeaders", func(t *testing.T) {
+		c := make(chan row)
+		go func() {
+			if err := UnmarshalToChanWithoutHeaders(strings.NewReader("alice,,\n"), c); err != nil {
+				t.Error(err)
+			}
+		}()
+		got := <-c
+		if got != want {
+			t.Fatalf("expected %+v, got %+v", want, got)
+		}
+	})
+
+	t.Run("NonEmptyAndZeroValuesUnchanged", func(t *testing.T) {
+		var out []row
+		if err := UnmarshalWithoutHeaders(strings.NewReader("bob,0,gold\n"), &out); err != nil {
+			t.Fatal(err)
+		}
+		expected := row{Name: "bob", Qty: 0, Tier: "gold"}
+		if len(out) != 1 || out[0] != expected {
+			t.Fatalf("expected %+v, got %+v", expected, out)
+		}
+	})
+}

@@ -386,7 +386,11 @@ func readEachWithoutHeaders(decoder SimpleDecoder, c interface{}) error {
 				break
 			}
 			fieldInfo := outInnerStructInfo.Fields[j]
-			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+			value := csvColumnContent
+			if value == "" {
+				value = fieldInfo.defaultValue
+			}
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, value, fieldInfo.omitEmpty); err != nil { // Set field of struct
 				return &csv.ParseError{
 					Line:   i + 1,
 					Column: j + 1,
@@ -434,7 +438,11 @@ func readToWithoutHeaders(decoder Decoder, out interface{}) error {
 				break
 			}
 			fieldInfo := outInnerStructInfo.Fields[j]
-			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+			value := csvColumnContent
+			if value == "" {
+				value = fieldInfo.defaultValue
+			}
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, value, fieldInfo.omitEmpty); err != nil { // Set field of struct
 				return &csv.ParseError{
 					Line:   i + 1,
 					Column: j + 1,
