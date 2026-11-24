@@ -294,6 +294,9 @@ func UnmarshalCSVToMap(in CSVReader, out interface{}) error {
 		} else if err != nil {
 			return err
 		}
+		if len(line) != 2 {
+			return fmt.Errorf("maps can only be created for csv of two columns")
+		}
 		if err := setField(key, line[0], false); err != nil {
 			return err
 		}
@@ -579,6 +582,9 @@ func CSVToMap(in io.Reader) (map[string]string, error) {
 			break
 		} else if err != nil {
 			return nil, err
+		}
+		if len(line) != 2 {
+			return nil, fmt.Errorf("maps can only be created for csv of two columns")
 		}
 		m[line[0]] = line[1]
 	}
