@@ -237,3 +237,17 @@ func TestFloat32Extremes(t *testing.T) {
 		t.Errorf("round trip changed the values: %v", back)
 	}
 }
+
+func TestSetFieldRejectsInvalidAndUnexportedValues(t *testing.T) {
+	if err := setField(reflect.Value{}, "value", false); err == nil {
+		t.Fatal("expected an error for an invalid reflect.Value")
+	}
+
+	type row struct {
+		unexported string
+	}
+	field := reflect.ValueOf(&row{}).Elem().Field(0)
+	if err := setField(field, "value", false); err == nil {
+		t.Fatal("expected an error for an unexported field")
+	}
+}

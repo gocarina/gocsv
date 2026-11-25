@@ -242,6 +242,9 @@ func isOnlyTextUnmarshaler(t reflect.Type) bool {
 }
 
 func setField(field reflect.Value, value string, omitEmpty bool) error {
+	if !field.IsValid() {
+		return fmt.Errorf("cannot set invalid reflect.Value")
+	}
 	if field.Kind() == reflect.Ptr {
 		if omitEmpty && value == "" {
 			return nil
@@ -254,6 +257,13 @@ func setField(field reflect.Value, value string, omitEmpty bool) error {
 			field.Set(reflect.New(field.Type().Elem()))
 		}
 		field = field.Elem()
+	}
+
+	if !field.CanInterface() {
+		return fmt.Errorf("cannot access field of type %s", field.Type())
+	}
+	if !field.CanSet() {
+		return fmt.Errorf("cannot set field of type %s", field.Type())
 	}
 
 	switch field.Interface().(type) {
